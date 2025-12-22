@@ -16,7 +16,7 @@ The application follows a modular full-stack architecture for scalability and cl
 
 ```mermaid
 graph TD
-    User[User (Browser)] -->|HTTP/JSON| Frontend[React + Vite Frontend]
+    User["User (Browser)"] -->|HTTP/JSON| Frontend["React + Vite Frontend"]
     Frontend -->|REST API| Backend[Node.js + Express Backend]
     Backend -->|Mongoose| DB[(MongoDB Atlas)]
     Backend -->|LangChain| AI[Groq Llama-3 API]
