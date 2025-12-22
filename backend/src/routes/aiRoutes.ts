@@ -1,7 +1,7 @@
 import express from 'express';
 import { type IProject } from '../models/Project.js';
 import { type ITask } from '../models/Task.js';
-import { analyzeProject, chatOverProject, type AnalyzeInput } from '../services/ai/analyzeProject.js'; // Person C's logic
+import { analyzeProject, chatOverProject, extractTasksFromText, type AnalyzeInput } from '../services/ai/analyzeProject.js'; // Person C's logic
 import Project from '../models/Project.js'; // Mongoose model for fetching
 import Task from '../models/Task.js'; // Mongoose model for fetching
 
@@ -81,6 +81,23 @@ router.post('/chat/:projectId', async (req, res) => {
     } catch (error: any) {
         console.error("AI Chat Route Error:", error);
         res.status(500).json({ message: "Failed to get AI chat response", error: error.message });
+    }
+});
+
+// POST God Mode: Doc-to-Tasks
+router.post('/doc-to-tasks', async (req, res) => {
+    const { document } = req.body;
+
+    if (!document) {
+        return res.status(400).json({ message: "Document text is required." });
+    }
+
+    try {
+        const result = await extractTasksFromText(document);
+        res.json(result);
+    } catch (error: any) {
+        console.error("Doc-to-Tasks Route Error:", error);
+        res.status(500).json({ message: "Failed to extract tasks from document", error: error.message });
     }
 });
 
