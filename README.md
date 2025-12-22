@@ -16,7 +16,7 @@ The application follows a modular full-stack architecture for scalability and cl
 
 ```mermaid
 graph TD
-    User["User (Browser)"] -->|HTTP/JSON| Frontend["React + Vite Frontend"]
+    User[User (Browser)] -->|HTTP/JSON| Frontend[React + Vite Frontend]
     Frontend -->|REST API| Backend[Node.js + Express Backend]
     Backend -->|Mongoose| DB[(MongoDB Atlas)]
     Backend -->|LangChain| AI[Groq Llama-3 API]
@@ -28,6 +28,9 @@ graph TD
 *   **AI Engine:** LangChain.js integrated directly into the backend logic for structured analysis.
 
 ## 📦 Installation & Setup
+
+### Prerequisites
+Review `requirements.txt` to ensure your environment matches the tech stack (Node.js v18+, etc.).
 
 1.  **Clone the repository:**
     ```bash

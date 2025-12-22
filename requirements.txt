@@ -1,0 +1,27 @@
+# PM AI Agent - Technical Requirements
+
+## Backend (Node.js)
+Node.js >= 18.0.0
+express
+mongoose (MongoDB ODM)
+cors
+dotenv
+typescript
+ts-node
+
+## AI & Logic
+@langchain/core
+@langchain/groq
+langchain
+
+## Frontend (React)
+React 19
+Vite
+TypeScript
+Tailwind CSS
+PostCSS
+Autoprefixer
+Lucide React (Icons)
+Recharts (Data Visualization)
+Axios (HTTP Client)
+React Router DOM
