@@ -19,7 +19,9 @@ graph TD
     User["User (Browser)"] -->|HTTP/JSON| Frontend["React + Vite Frontend"]
     Frontend -->|REST API| Backend["Node.js + Express Backend"]
     Backend -->|Mongoose| DB[("MongoDB Atlas")]
-    Backend -->|LangChain| AI["Groq Llama-3 API"]
+    Backend -->|LangChain| AIService["AI Service Layer"]
+    AIService -->|Primary| Groq["Groq Llama-3"]
+    AIService -->|Fallback| OpenAI["OpenAI GPT-4o"]
 ```
 
 *   **Frontend:** React 19, TypeScript, Tailwind CSS, Recharts.
@@ -31,7 +33,7 @@ graph TD
 
 We chose **LangChain.js** as the backbone of our AI service for three key reasons:
 1.  **Provider Agnostic:** It allows us to seamlessly switch between **Groq** (for speed) and **OpenAI** (for fallback reliability) without rewriting core logic.
-2.  **Structured Output:** its output parsers help enforce strict JSON schemas, preventing the common "hallucination" errors where AI returns invalid data.
+2.  **Structured Output:** Its output parsers help enforce strict JSON schemas, preventing the common "hallucination" errors where AI returns invalid data.
 3.  **Prompt Management:** It simplifies chaining prompts and context, which is essential for our future "Context-Aware" features.
 
 ## 📦 Installation & Setup
