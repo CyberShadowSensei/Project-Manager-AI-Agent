@@ -3,19 +3,19 @@ import { useState, useEffect } from 'react'
 import { useProject } from '../context/ProjectContext'
 import { analyticsService, type Analytics } from '../services/api'
 
-export const AnalyticsRow = () => {
+type AnalyticsRowProps = {
+  activeTeam?: string | null
+}
+
+export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
   const { currentProject } = useProject()
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(false)
 
   const fetchAnalytics = async () => {
-    if (!currentProject) {
-      setAnalytics(null);
-      return;
-    }
     setLoading(true)
     try {
-      const response = await analyticsService.getProjectAnalytics(currentProject._id)
+      const response = await analyticsService.getProjectAnalytics(currentProject?._id, activeTeam)
       setAnalytics(response.data.analytics)
     } catch (error) {
       console.error('Failed to fetch analytics:', error)
@@ -27,7 +27,7 @@ export const AnalyticsRow = () => {
 
   useEffect(() => {
     fetchAnalytics()
-  }, [currentProject])
+  }, [currentProject, activeTeam])
 
   const donutData = analytics ? [
     { name: 'To Do', value: analytics.statusBreakdown.todo, color: '#6366F1' },
@@ -60,7 +60,7 @@ export const AnalyticsRow = () => {
   }
 
   return (
-    <div className="flex gap-4 h-[210px]">
+    <div className="flex gap-6 h-[210px] shrink-0">
       <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex">
         <div className="flex flex-col justify-between w-[55%]">
           <div>
@@ -168,7 +168,8 @@ export const AnalyticsRow = () => {
               barCategoryGap={18}
             >
               <Tooltip 
-                contentStyle={{ backgroundColor: '#1e1b4b', border: '1px solid rgba(255,255,255,0.1)', fontSize: '10px' }}
+                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                contentStyle={{ backgroundColor: '#1A1D2D', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
                 itemStyle={{ color: '#fff' }}
               />
               <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} axisLine={false} tickLine={false} />

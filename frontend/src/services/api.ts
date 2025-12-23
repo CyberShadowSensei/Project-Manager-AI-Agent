@@ -17,13 +17,22 @@ export interface Project {
   createdAt: string;
   description?: string;
   image?: string;
+  context?: string;
+  assets?: {
+    _id: string;
+    name: string;
+    type: string;
+    size: number;
+    uploadedAt: string;
+  }[];
 }
 
 export interface Task {
   _id: string;
-  project: string;
+  project?: string;
   name: string;
   owner: string;
+  team?: 'Marketing' | 'Development' | 'Design' | 'Product' | 'Operations';
   status: 'To Do' | 'In Progress' | 'Done';
   priority: 'Low' | 'Medium' | 'High';
   dueDate: string;
@@ -69,6 +78,21 @@ export interface AIInsights {
   }[];
 }
 
+// Unified Inbox Message Interface
+export interface InboxMessage {
+  _id?: string;
+  id?: string; // Slack uses 'id' or 'ts'
+  name?: string;
+  user?: string; // Slack uses 'user'
+  topic?: string;
+  tag?: string;
+  preview?: string;
+  text?: string; // Slack uses 'text'
+  team?: string;
+  timestamp?: string;
+  ts?: string; // Slack timestamp
+}
+
 
 // --- API FUNCTIONS ---
 
@@ -78,22 +102,45 @@ export const projectService = {
   create: (data: Omit<Project, '_id' | 'createdAt'>) => api.post<Project>('/projects', data),
   update: (id: string, data: Partial<Omit<Project, '_id' | 'createdAt'>>) => api.patch<Project>(`/projects/${id}`, data),
   remove: (id: string) => api.delete(`/projects/${id}`),
+  uploadFile: (projectId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<{ message: string; assets: any[] }>(`/upload/${projectId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export const taskService = {
-  getByProject: (projectId: string) => api.get<Task[]>(`/tasks?projectId=${projectId}`),
+  getByProject: (projectId?: string, searchQuery?: string) => {
+    return api.get<Task[]>(`/tasks`, { params: { projectId, searchQuery } });
+  },
   create: (data: Omit<Task, '_id' | 'createdAt' | 'dependsOn'> & { dependsOn?: string }) => api.post<Task>('/tasks', data),
   update: (id: string, data: Partial<Omit<Task, '_id' | 'createdAt'>>) => api.patch<Task>(`/tasks/${id}`, data),
   remove: (id: string) => api.delete(`/tasks/${id}`),
 };
 
 export const analyticsService = {
-  getProjectAnalytics: (projectId: string) => api.get<{ analytics: Analytics }>(`/analytics/${projectId}`),
+  getProjectAnalytics: (projectId?: string, team?: string | null) => {
+    const id = projectId || 'global';
+    return api.get<{ analytics: Analytics }>(`/analytics/${id}`, { params: { team } });
+  },
 };
 
 export const aiService = {
   getInsights: (projectId: string) => api.post<AIInsights>(`/ai/analyze/${projectId}`),
   chatWithAI: (projectId: string, question: string) => api.post<{ answer: string }>(`/ai/chat/${projectId}`, { question }),
+};
+
+export const inboxService = {
+  // Tries to get messages. If Slack is set up, it hits /inbox (root). 
+  // If not, it falls back to mock data handled by the backend.
+  getMessages: (searchQuery?: string) => {
+    return api.get<{ items: InboxMessage[] }>('/inbox', { params: { searchQuery } });
+  },
+  getSlackMessages: () => api.get<{ items: InboxMessage[] }>('/inbox'),
 };
 
 export default api;

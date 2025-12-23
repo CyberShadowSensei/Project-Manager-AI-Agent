@@ -1,9 +1,10 @@
 import { Plus } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useProject } from '../context/ProjectContext'
 import { taskService, type Task } from '../services/api'
 import { Modal } from './ui/Modal' // Assuming Modal.tsx is in components/ui
 import { AddTaskForm } from './forms/AddTaskForm' // Assuming AddTaskForm.tsx is in components/forms
+import EditTaskModal from './forms/EditTaskModal'
 
 const columns = ['To Do', 'In Progress', 'Done']
 
@@ -13,25 +14,27 @@ type TaskManagerProps = {
 }
 
 export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) => {
-  const { currentProject } = useProject()
+  const { currentProject, taskRefreshTrigger } = useProject()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
-  const fetchTasks = async () => {
-    if (!currentProject) {
-      setTasks([]);
-      return;
-    }
+  const fetchTasks = useCallback(async () => {
+    // if (!currentProject) {
+    //   setTasks([]);
+    //   return;
+    // }
     setLoading(true)
     try {
-      const response = await taskService.getByProject(currentProject._id)
+      const response = await taskService.getByProject(currentProject?._id)
       
       let filteredTasks = response.data;
 
       // Apply search and team filters here
       if (activeTeam) {
-        filteredTasks = filteredTasks.filter(task => task.owner === activeTeam) // Assuming owner maps to team
+        filteredTasks = filteredTasks.filter(task => task.team === activeTeam)
       }
       if (searchQuery) {
         filteredTasks = filteredTasks.filter(
@@ -47,15 +50,26 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentProject, searchQuery, activeTeam])
 
   useEffect(() => {
     fetchTasks()
-  }, [currentProject, searchQuery, activeTeam]) // Re-fetch when project, search, or team changes
+  }, [currentProject, searchQuery, activeTeam, taskRefreshTrigger, fetchTasks]) // Re-fetch when project, search, team, or refresh trigger changes
 
   const handleTaskAdded = () => {
     setIsModalOpen(false)
     fetchTasks() // Refresh tasks after adding one
+  }
+
+  const handleEditTask = (task: Task) => {
+    setSelectedTask(task)
+    setIsEditModalOpen(true)
+  }
+
+  const handleTaskEdited = () => {
+    setIsEditModalOpen(false)
+    setSelectedTask(null)
+    fetchTasks() // Refresh tasks after editing one
   }
 
   const getStatusProgress = (status: string) => {
@@ -80,11 +94,22 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsModalOpen(true)}
-            disabled={!currentProject}
             className="h-8 px-3 rounded-lg bg-primary text-[11px] flex items-center gap-1 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95 transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Task</span>
+          </button>
+          <button
+            onClick={() => {
+              if (tasks.length > 0) {
+                setSelectedTask(tasks[0])
+                setIsEditModalOpen(true)
+              }
+            }}
+            disabled={tasks.length === 0}
+            className="h-8 px-3 rounded-lg bg-white/5 text-[11px] flex items-center gap-1 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95 transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span>Edit Task</span>
           </button>
         </div>
       </div>
@@ -109,10 +134,12 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
                     key={task._id}
                     title={task.name}
                     subtitle={task.owner}
+                    team={task.team}
                     description={task.description || 'No description provided.'}
                     time={new Date(task.dueDate).toLocaleDateString()}
                     progress={getStatusProgress(task.status)}
                     priority={task.priority}
+                    onEdit={() => handleEditTask(task)}
                   />
                 ))}
               </div>
@@ -121,11 +148,7 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
         </div>
       )}
 
-      {!currentProject && !loading && (
-        <div className="flex-1 flex items-center justify-center text-muted text-sm italic">
-          Select a project to view and manage tasks.
-        </div>
-      )}
+
 
 
       <Modal 
@@ -138,6 +161,15 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
           onCancel={() => setIsModalOpen(false)} 
         />
       </Modal>
+
+      {selectedTask && (
+        <EditTaskModal
+          task={selectedTask}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={handleTaskEdited}
+        />
+      )}
     </div>
   )
 }
@@ -145,13 +177,15 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
 type TaskCardProps = {
   title: string
   subtitle: string
+  team?: string
   description: string
   time: string
   progress: number
   priority: 'Low' | 'Medium' | 'High'
+  onEdit: () => void
 }
 
-const TaskCard = ({ title, subtitle, description, time, progress, priority }: TaskCardProps) => {
+const TaskCard = ({ title, subtitle, team, description, time, progress, priority, onEdit }: TaskCardProps) => {
   const getPriorityColor = (p: 'Low' | 'Medium' | 'High') => {
     switch (p) {
       case 'High': return 'text-red-400'
@@ -162,13 +196,27 @@ const TaskCard = ({ title, subtitle, description, time, progress, priority }: Ta
   }
 
   return (
-    <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] px-3.5 py-3 text-[11px] flex flex-col gap-1.5 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out cursor-pointer">
+    <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] px-3.5 py-3 text-[11px] flex flex-col gap-1.5 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out cursor-pointer group">
       <div className="flex justify-between items-center text-[10px] text-muted">
         <span>{time}</span>
-        <span className={`font-medium ${getPriorityColor(priority)}`}>{priority}</span>
+        <div className="flex items-center gap-2">
+          <span className={`font-medium ${getPriorityColor(priority)}`}>{priority}</span>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit()
+            }}
+            className="opacity-0 group-hover:opacity-100 px-2 py-1 rounded bg-primary/20 hover:bg-primary/40 text-xs text-primary transition-all duration-200"
+          >
+            Edit
+          </button>
+        </div>
       </div>
       <div className="text-[12px] font-semibold text-white truncate">{title}</div>
-      <div className="text-[10px] text-muted mb-1">Owner: {subtitle}</div>
+      <div className="flex justify-between items-center text-[10px] text-muted mb-1">
+        <span>Owner: {subtitle}</span>
+        {team && <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/70">{team}</span>}
+      </div>
       <div className="text-[10px] text-muted line-clamp-2 leading-relaxed">{description}</div>
       <div className="mt-2">
         <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
@@ -193,5 +241,3 @@ const TaskCard = ({ title, subtitle, description, time, progress, priority }: Ta
 const AvatarCircle = () => (
   <div className="w-5 h-5 rounded-full border border-black/40 bg-[radial-gradient(circle_at_30%_20%,#FACC15,#F97316_40%,#A855F7_75%)]" />
 )
-
-

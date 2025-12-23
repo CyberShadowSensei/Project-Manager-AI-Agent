@@ -16,6 +16,7 @@ export interface Task {
 export interface Project {
   id: string;
   name: string;
+  context?: string;
 }
 
 export interface AnalyzeInput {
@@ -217,8 +218,12 @@ export async function chatOverProject(
   tasks: Task[],
   question: string
 ): Promise<string> {
+  // Truncate context to avoid blowing up the LLM context window
+  const safeContext = (project.context || "No additional documents uploaded.").slice(0, 25000);
+
   const messages = await chatTemplate.formatMessages({
     projectName: project.name,
+    context: safeContext,
     tasksBlock: buildTasksBlock(tasks),
     question,
   });

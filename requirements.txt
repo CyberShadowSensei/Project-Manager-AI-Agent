@@ -8,10 +8,14 @@ cors
 dotenv
 typescript
 ts-node
+multer
+pdf-parse
+@slack/web-api
 
 ## AI & Logic
 @langchain/core
 @langchain/groq
+@langchain/openai
 langchain
 
 ## Frontend (React)
@@ -25,3 +29,6 @@ Lucide React (Icons)
 Recharts (Data Visualization)
 Axios (HTTP Client)
 React Router DOM
+@tailwindcss/typography
+react-markdown
+remark-gfm

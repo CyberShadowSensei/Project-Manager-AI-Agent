@@ -28,13 +28,16 @@ router.post('/', async (req, res) => {
     try {
         const taskData: Partial<ITask> = { ...req.body };
 
-        // Validate project ID
-        if (!taskData.project || !Types.ObjectId.isValid(taskData.project)) {
-            return res.status(400).json({ message: 'Valid Project ID is required' });
+        // Validate project ID ONLY if provided
+        if (taskData.project && !Types.ObjectId.isValid(taskData.project)) {
+             return res.status(400).json({ message: 'Invalid Project ID' });
         }
-        const projectExists = await Project.findById(taskData.project);
-        if (!projectExists) {
-            return res.status(404).json({ message: 'Project not found' });
+        
+        if (taskData.project) {
+            const projectExists = await Project.findById(taskData.project);
+            if (!projectExists) {
+                return res.status(404).json({ message: 'Project not found' });
+            }
         }
 
         // Validate dependsOn ID if provided

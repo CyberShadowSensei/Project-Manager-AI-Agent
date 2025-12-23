@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { projectService } from '../../services/api';
 import { useProject } from '../../context/ProjectContext'; // Ensure this path is correct
 
@@ -8,25 +9,34 @@ interface CreateProjectFormProps {
 }
 
 export const CreateProjectForm = ({ onSuccess, onCancel }: CreateProjectFormProps) => {
-  const { refreshProjects } = useProject();
+  const { setCurrentProject } = useProject();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
     startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Default 1 week
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 1 week
+    description: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
     try {
-      await projectService.create(formData);
-      await refreshProjects(); // Refresh context list
+      const response = await projectService.create(formData);
+      const created = response.data;
+      // Set current project immediately
+      setCurrentProject(created);
       onSuccess();
-    } catch (error) {
+      // Close modal and navigate to dashboard
+      navigate('/dashboard');
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to create project';
       console.error('Failed to create project:', error);
-      // Optionally show an error message to the user
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -37,6 +47,12 @@ export const CreateProjectForm = ({ onSuccess, onCancel }: CreateProjectFormProp
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-300 text-sm">
+          {error}
+        </div>
+      )}
+      
       <div>
         <label className={labelClass}>Project Name</label>
         <input 
@@ -46,6 +62,17 @@ export const CreateProjectForm = ({ onSuccess, onCancel }: CreateProjectFormProp
           placeholder="e.g. Mobile App Launch"
           value={formData.name}
           onChange={e => setFormData({...formData, name: e.target.value})}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Description (Optional)</label>
+        <textarea 
+          className={inputClass}
+          placeholder="Project description..."
+          rows={2}
+          value={formData.description}
+          onChange={e => setFormData({...formData, description: e.target.value})}
         />
       </div>
 

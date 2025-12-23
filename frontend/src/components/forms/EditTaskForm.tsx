@@ -3,26 +3,27 @@ import { useProject } from '../../context/ProjectContext';
 import { taskService, type Task } from '../../services/api';
 import { StatusBadge, PriorityBadge } from '../ui/BadgeComponents';
 
-interface AddTaskFormProps {
+interface EditTaskFormProps {
+  task: Task;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
+export const EditTaskForm = ({ task, onSuccess, onCancel }: EditTaskFormProps) => {
   const { currentProject, triggerTaskRefresh } = useProject();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingTasks, setExistingTasks] = useState<Task[]>([]);
   
   const [formData, setFormData] = useState({
-    name: '',
-    owner: '',
-    team: 'Development',
-    status: 'To Do',
-    priority: 'Medium',
-    dueDate: new Date().toISOString().split('T')[0],
-    description: '',
-    dependsOn: ''
+    name: task.name,
+    owner: task.owner,
+    team: task.team || 'Development',
+    status: task.status,
+    priority: task.priority,
+    dueDate: task.dueDate.split('T')[0],
+    description: task.description || '',
+    dependsOn: task.dependsOn?._id || ''
   });
 
   // Fetch existing tasks for dependency dropdown
@@ -31,35 +32,35 @@ export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
       if (currentProject) {
         try {
           const res = await taskService.getByProject(currentProject._id);
-          setExistingTasks(res.data);
+          // Exclude the current task from the dependency list
+          setExistingTasks(res.data.filter(t => t._id !== task._id));
         } catch (err) {
           console.error("Failed to load tasks for dependencies", err);
         }
       }
     };
     fetchTasks();
-  }, [currentProject]);
+  }, [currentProject, task._id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // if (!currentProject) return; 
+    // if (!currentProject) return;
 
     setLoading(true);
     setError(null);
     try {
-      await taskService.create({
+      await taskService.update(task._id, {
         ...formData,
-        project: currentProject?._id,
         team: formData.team as any,
         status: formData.status as 'To Do' | 'In Progress' | 'Done',
         priority: formData.priority as 'Low' | 'Medium' | 'High',
         dependsOn: formData.dependsOn || undefined
-      });
+      } as any);
       triggerTaskRefresh(); // Trigger task refresh across the app
       onSuccess();
     } catch (err: any) {
-      console.error('Failed to create task:', err);
-      setError(err.response?.data?.message || 'Failed to create task. Please try again.');
+      console.error('Failed to update task:', err);
+      setError(err.response?.data?.message || 'Failed to update task. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -105,7 +106,7 @@ export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
           <select 
             className={inputClass}
             value={formData.team}
-            onChange={e => setFormData({...formData, team: e.target.value})}
+            onChange={e => setFormData({...formData, team: e.target.value as any})}
           >
             <option value="Development" className={optionClass}>Development</option>
             <option value="Marketing" className={optionClass}>Marketing</option>
@@ -133,7 +134,7 @@ export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
             <select 
               className="bg-transparent text-sm text-white focus:outline-none cursor-pointer flex-1"
               value={formData.status}
-              onChange={e => setFormData({...formData, status: e.target.value})}
+              onChange={e => setFormData({...formData, status: e.target.value as any})}
             >
               <option value="To Do" className={optionClass}>To Do</option>
               <option value="In Progress" className={optionClass}>In Progress</option>
@@ -151,7 +152,7 @@ export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
             <select 
               className="bg-transparent text-sm text-white focus:outline-none cursor-pointer flex-1"
               value={formData.priority}
-              onChange={e => setFormData({...formData, priority: e.target.value})}
+              onChange={e => setFormData({...formData, priority: e.target.value as any})}
             >
               <option value="Low" className={optionClass}>Low</option>
               <option value="Medium" className={optionClass}>Medium</option>
@@ -182,6 +183,7 @@ export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
           rows={3}
           value={formData.description}
           onChange={e => setFormData({...formData, description: e.target.value})}
+          placeholder="Task description (optional)"
         />
       </div>
 
@@ -198,7 +200,7 @@ export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
           disabled={loading}
           className="flex-1 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-sm font-medium transition-colors disabled:opacity-50"
         >
-          {loading ? 'Creating...' : 'Create Task'}
+          {loading ? 'Updating...' : 'Update Task'}
         </button>
       </div>
     </form>

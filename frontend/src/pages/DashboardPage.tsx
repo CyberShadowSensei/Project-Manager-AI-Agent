@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useOutletContext, useNavigate } from 'react-router-dom'
+import { useProject } from '../context/ProjectContext'
 import { Search } from 'lucide-react'
 import { AnalyticsRow } from '../components/AnalyticsRow'
 import { BottomRow } from '../components/BottomRow'
@@ -10,6 +11,15 @@ type DashboardContext = {
 
 export const DashboardPage = () => {
   const { activeTeam } = useOutletContext<DashboardContext>()
+  const { currentProject } = useProject()
+  const navigate = useNavigate()
+  
+  useEffect(() => {
+    if (!currentProject) {
+      navigate('/projects')
+    }
+  }, [currentProject, navigate])
+
   const [searchQuery, setSearchQuery] = useState('')
 
   const handleSearch = () => {
@@ -55,4 +65,3 @@ export const DashboardPage = () => {
     </div>
   )
 }
-

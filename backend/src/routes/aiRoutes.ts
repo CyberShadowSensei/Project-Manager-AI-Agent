@@ -64,7 +64,11 @@ router.post('/chat/:projectId', async (req, res) => {
 
         // Call Person C's AI chat logic
         const answer = await chatOverProject(
-            { id: projectData._id.toString(), name: projectData.name },
+            { 
+                id: projectData._id.toString(), 
+                name: projectData.name,
+                context: projectData.context 
+            },
             tasksData.map(t => ({
                 id: t._id.toString(),
                 title: t.name,

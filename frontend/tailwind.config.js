@@ -1,12 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx,jsx,js}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        primary: '#A855F7',
-        secondary: '#EC4899',
-        muted: 'rgba(255,255,255,0.6)',
+        primary: 'var(--primary)',
+        secondary: 'var(--secondary)',
+        muted: 'var(--muted)',
       },
       boxShadow: {
         dashboard: '0 24px 60px rgba(0,0,0,0.7)',
@@ -16,6 +17,7 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 }
-

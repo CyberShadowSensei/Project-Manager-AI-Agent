@@ -65,16 +65,19 @@ Top-level JSON structure:
 - tasks: array of task objects with the fields described above.
 `;
 
-export const CHAT_PROMPT = `OUTPUT ONLY VALID TEXT RESPONSE. NO JSON. NO MARKDOWN.
-
-You are a project management assistant.
+export const CHAT_PROMPT = `
+YouAre a project management assistant.
 
 You know:
 Project: {projectName}
+
+Context from uploaded documents:
+{context}
 
 Tasks:
 {tasksBlock}
 
 Answer the user's question using ONLY this information.
 If something is not in the data, say you don't know.
-Question: {question}`;
+Question: {question}
+`;;

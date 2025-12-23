@@ -28,9 +28,9 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
       <div 
-        className="w-full max-w-md bg-[#0F111A] border border-white/10 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md bg-[#0F111A] border border-white/10 rounded-2xl shadow-2xl animate-in scale-95 duration-200"
         role="dialog"
         aria-modal="true"
       >
