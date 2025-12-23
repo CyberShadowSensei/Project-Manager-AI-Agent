@@ -5,7 +5,21 @@ An AI-powered project management assistant designed to streamline planning, task
 ![Status](https://img.shields.io/badge/Status-Feature%20Complete-green)
 ![Stack](https://img.shields.io/badge/Stack-MERN%20%2B%20LangChain-blue)
 
-## 🚀 Features
+## 📌 Project Context (Hackathon Challenge)
+
+**Background:**
+Project Managers often struggle to keep track of deliverables, dependencies, and progress across distributed teams. An AI-powered PM Agent can assist in planning, task tracking, and team coordination using intelligent automation.
+
+**Our Mission:**
+Create an AI agent that satisfies the following core objectives:
+*   Summarize project status, generate daily stand-up updates, and track deadlines.
+*   Integrate with platforms like Jira, Trello, and Slack.
+*   Predict risks or delays using ML models.
+*   Enable natural language commands for quick queries and reporting.
+
+---
+
+## 🚀 Key Features Implemented
 
 ### 🧠 AI Intelligence ("God Mode")
 *   **Context-Aware Chat:** Upload PRDs, meeting notes, or specs to the "AI Hub". The agent uses RAG (Retrieval-Augmented Generation) to answer questions based on your specific documents.
@@ -24,11 +38,34 @@ An AI-powered project management assistant designed to streamline planning, task
 
 ---
 
+## 🏗️ Architecture
+
+The application follows a modular full-stack architecture for scalability and clear separation of concerns:
+
+```mermaid
+graph TD
+    User["User (Browser)"] -->|HTTP/JSON| Frontend["React + Vite Frontend"]
+    Frontend -->|REST API| Backend["Node.js + Express Backend"]
+    Backend -->|Mongoose| DB[("MongoDB Atlas")]
+    Backend -->|LangChain| AIService["AI Service Layer"]
+    AIService -->|Primary| Groq["Groq Llama-3"]
+    AIService -->|Fallback| OpenAI["OpenAI GPT-4o"]
+```
+
+### 💡 Why LangChain.js?
+We chose **LangChain.js** as the backbone of our AI service for three key reasons:
+1.  **Provider Agnostic:** It allows us to seamlessly switch between **Groq** (for speed) and **OpenAI** (for fallback reliability) without rewriting core logic.
+2.  **Structured Output:** Its output parsers help enforce strict JSON schemas, preventing the common "hallucination" errors where AI returns invalid data.
+3.  **Prompt Management:** It simplifies chaining prompts and context, which is essential for our "God Mode" document analysis.
+
+---
+
 ## 🛠️ Tech Stack
 
-*   **Frontend:** React (v19), Vite, TypeScript, Tailwind CSS, Recharts, Lucide Icons.
+*   **Frontend:** React (v19), Vite, TypeScript, Tailwind CSS, Recharts, Lucide Icons, @tailwindcss/typography.
 *   **Backend:** Node.js, Express, MongoDB (Mongoose).
 *   **AI Engine:** LangChain.js (Groq Llama-3-8b primary, OpenAI GPT-4o fallback).
+*   **Tools:** PDF-Parse, Multer, @slack/web-api.
 
 ---
 
@@ -36,8 +73,8 @@ An AI-powered project management assistant designed to streamline planning, task
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/pm-ai-agent.git
-cd pm-ai-agent
+git clone https://github.com/CyberShadowSensei/Project-Manager-AI-Agent.git
+cd Project-Manager-AI-Agent
 ```
 
 ### 2. Backend Setup
@@ -79,6 +116,14 @@ npm run dev
 2.  **Upload Context:** Go to **AI Hub** (sidebar) and drop a PDF/Text file (e.g., a PRD).
 3.  **Chat with AI:** Click the 💬 icon or use the inline chat in AI Hub. Ask: *"What are the risks in the uploaded PRD?"*
 4.  **Check Inbox:** Go to the dashboard. You will see "Demo Mode" messages unless you configured Slack.
+
+---
+
+## 🔮 Future Goals
+
+*   **Advanced Workspace Management:** Implementation of multi-tenant environments for different teams.
+*   **Granular Activity Logging:** Comprehensive audit trails for project and task modifications.
+*   **Jira/Trello Integration:** Expand the "Smart Inbox" concept to include bi-directional sync with Jira boards.
 
 ---
 
