@@ -99,7 +99,7 @@ export interface InboxMessage {
 export const projectService = {
   getAll: () => api.get<Project[]>('/projects'),
   getById: (id: string) => api.get<Project>(`/projects/${id}`),
-  create: (data: Omit<Project, '_id' | 'createdAt'>) => api.post<Project>('/projects', data),
+  create: (data: Omit<Project, '_id' | 'createdAt'>) => api.post<Project>('/api/projects', data),
   update: (id: string, data: Partial<Omit<Project, '_id' | 'createdAt'>>) => api.patch<Project>(`/projects/${id}`, data),
   remove: (id: string) => api.delete(`/projects/${id}`),
   uploadFile: (projectId: string, file: File) => {
