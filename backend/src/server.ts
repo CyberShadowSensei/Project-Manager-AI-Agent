@@ -25,6 +25,10 @@ const startServer = async () => {
     app.use('/api/inbox', inboxRoutes);
     app.use('/api/upload', uploadRoutes);
 
+    app.get('/healthz', (req, res) => {
+        res.status(200).send('ok');
+    });
+
     app.get('/', (req, res) => {
         res.send('PM AI Agent Backend is running!');
     });
