@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // The backend URL will be picked up from the .env file in the frontend directory
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -97,15 +97,15 @@ export interface InboxMessage {
 // --- API FUNCTIONS ---
 
 export const projectService = {
-  getAll: () => api.get<Project[]>('/projects'),
-  getById: (id: string) => api.get<Project>(`/projects/${id}`),
+  getAll: () => api.get<Project[]>('/api/projects'),
+  getById: (id: string) => api.get<Project>(`/api/projects/${id}`),
   create: (data: Omit<Project, '_id' | 'createdAt'>) => api.post<Project>('/api/projects', data),
-  update: (id: string, data: Partial<Omit<Project, '_id' | 'createdAt'>>) => api.patch<Project>(`/projects/${id}`, data),
-  remove: (id: string) => api.delete(`/projects/${id}`),
+  update: (id: string, data: Partial<Omit<Project, '_id' | 'createdAt'>>) => api.patch<Project>(`/api/projects/${id}`, data),
+  remove: (id: string) => api.delete(`/api/projects/${id}`),
   uploadFile: (projectId: string, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post<{ message: string; assets: any[] }>(`/upload/${projectId}`, formData, {
+    return api.post<{ message: string; assets: any[] }>(`/api/upload/${projectId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -115,32 +115,32 @@ export const projectService = {
 
 export const taskService = {
   getByProject: (projectId?: string, searchQuery?: string) => {
-    return api.get<Task[]>(`/tasks`, { params: { projectId, searchQuery } });
+    return api.get<Task[]>(`/api/tasks`, { params: { projectId, searchQuery } });
   },
-  create: (data: Omit<Task, '_id' | 'createdAt' | 'dependsOn'> & { dependsOn?: string }) => api.post<Task>('/tasks', data),
-  update: (id: string, data: Partial<Omit<Task, '_id' | 'createdAt'>>) => api.patch<Task>(`/tasks/${id}`, data),
-  remove: (id: string) => api.delete(`/tasks/${id}`),
+  create: (data: Omit<Task, '_id' | 'createdAt' | 'dependsOn'> & { dependsOn?: string }) => api.post<Task>('/api/tasks', data),
+  update: (id: string, data: Partial<Omit<Task, '_id' | 'createdAt'>>) => api.patch<Task>(`/api/tasks/${id}`, data),
+  remove: (id: string) => api.delete(`/api/tasks/${id}`),
 };
 
 export const analyticsService = {
   getProjectAnalytics: (projectId?: string, team?: string | null) => {
     const id = projectId || 'global';
-    return api.get<{ analytics: Analytics }>(`/analytics/${id}`, { params: { team } });
+    return api.get<{ analytics: Analytics }>(`/api/analytics/${id}`, { params: { team } });
   },
 };
 
 export const aiService = {
-  getInsights: (projectId: string) => api.post<AIInsights>(`/ai/analyze/${projectId}`),
-  chatWithAI: (projectId: string, question: string) => api.post<{ answer: string }>(`/ai/chat/${projectId}`, { question }),
+  getInsights: (projectId: string) => api.post<AIInsights>(`/api/ai/analyze/${projectId}`),
+  chatWithAI: (projectId: string, question: string) => api.post<{ answer: string }>(`/api/ai/chat/${projectId}`, { question }),
 };
 
 export const inboxService = {
   // Tries to get messages. If Slack is set up, it hits /inbox (root). 
   // If not, it falls back to mock data handled by the backend.
   getMessages: (searchQuery?: string) => {
-    return api.get<{ items: InboxMessage[] }>('/inbox', { params: { searchQuery } });
+    return api.get<{ items: InboxMessage[] }>('/api/inbox', { params: { searchQuery } });
   },
-  getSlackMessages: () => api.get<{ items: InboxMessage[] }>('/inbox'),
+  getSlackMessages: () => api.get<{ items: InboxMessage[] }>('/api/inbox'),
 };
 
 export default api;
