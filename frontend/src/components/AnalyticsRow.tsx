@@ -51,7 +51,7 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
   //   { day: 'Thu', hours: 7 },
   // ]
 
-  if (loading) {
+  if (loading || !analytics) {
     return (
       <div className="flex gap-4 h-[210px] items-center justify-center bg-white/[0.01] rounded-2xl border border-white/[0.03]">
         <div className="text-muted text-sm animate-pulse">Analyzing project metrics...</div>
@@ -61,7 +61,7 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
 
   return (
     <div className="flex gap-6 h-[210px] shrink-0">
-      <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out animate-[fadeIn_0.4s_ease-out]">
+      <div className="flex-1 min-w-0 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out animate-[fadeIn_0.4s_ease-out]">
         <div className="flex flex-col justify-between w-[55%]">
           <div>
             <div className="text-[11px] text-muted mb-1">Status Overview</div>
@@ -106,7 +106,7 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
         </div>
       </div>
 
-      <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex flex-col hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out animate-[fadeIn_0.5s_ease-out]">
+      <div className="flex-1 min-w-0 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex flex-col hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out animate-[fadeIn_0.5s_ease-out]">
         <div className="flex items-center justify-between mb-2">
           <div>
             <div className="text-[11px] text-muted mb-1">Completion Rate</div>
@@ -150,7 +150,7 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
         </div>
       </div>
 
-      <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex flex-col hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out animate-[fadeIn_0.6s_ease-out]">
+      <div className="flex-1 min-w-0 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex flex-col hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out animate-[fadeIn_0.6s_ease-out]">
         <div className="flex items-center justify-between mb-2">
           <div>
             <div className="text-[11px] text-muted mb-1">Priority Breakdown</div>
