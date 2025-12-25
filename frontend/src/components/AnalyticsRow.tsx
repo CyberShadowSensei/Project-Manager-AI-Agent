@@ -8,7 +8,7 @@ type AnalyticsRowProps = {
 }
 
 export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
-  const { currentProject } = useProject()
+  const { currentProject, taskRefreshTrigger } = useProject()
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -27,7 +27,7 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
 
   useEffect(() => {
     fetchAnalytics()
-  }, [currentProject, activeTeam, fetchAnalytics])
+  }, [currentProject, activeTeam, fetchAnalytics, taskRefreshTrigger])
 
   const donutData = analytics ? [
     { name: 'To Do', value: analytics.statusBreakdown.todo, color: '#6366F1' },

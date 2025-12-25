@@ -47,7 +47,7 @@ export const Layout = () => {
       <div className="w-[240px] border-r border-white/5">
         <Sidebar activeView={activeView} onTeamChange={setActiveView} profilePicture={profilePicture} />
       </div>
-      <div className="flex-1 flex flex-col px-8 py-7 gap-6 overflow-auto">
+      <div className="flex-1 flex flex-col min-w-0 px-8 py-7 gap-6 overflow-auto">
         <Header pagePath={location.pathname} />
         <Outlet context={{ activeTeam }} />
       </div>
