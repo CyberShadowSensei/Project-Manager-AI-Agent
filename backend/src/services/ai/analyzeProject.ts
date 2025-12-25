@@ -257,3 +257,50 @@ export async function chatOverProject(
   }
 }
 
+/**
+ * Extracts tasks from a PRD or document (God Mode)
+ */
+export async function extractTasksFromText(
+  document: string
+): Promise<ExtractedTasksResult | { error: string; raw: string; cleaned: string }> {
+  const messages = await docToTasksTemplate.formatMessages({ document });
+
+  try {
+    const res = await callLLM(messages);
+    const textRaw =
+      typeof (res as any).content === "string"
+        ? (res as any).content
+        : ((res as any).content as any[])
+            .map((c: any) => c.text ?? "")
+            .join("");
+
+    const cleaned = cleanLLMText(textRaw); // reuse cleaner
+
+    try {
+      const parsed = JSON.parse(cleaned);
+      const wrapped: any = Array.isArray(parsed) ? { tasks: parsed } : parsed;
+
+      if (!isExtractedTasksResult(wrapped)) {
+        return {
+          error: "Doc-to-task AI output validation failed",
+          raw: textRaw,
+          cleaned,
+        };
+      }
+
+      return wrapped as ExtractedTasksResult;
+    } catch {
+      return {
+        error: "Failed to parse doc-to-task AI JSON",
+        raw: textRaw,
+        cleaned,
+      };
+    }
+  } catch (err: any) {
+    return {
+      error: err.message || "LLM invocation failed",
+      raw: "",
+      cleaned: "",
+    };
+  }
+}
