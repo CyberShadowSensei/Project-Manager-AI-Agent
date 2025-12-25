@@ -51,15 +51,15 @@ graph TD
     Frontend -->|REST API| Backend["Node.js + Express Backend"]
     Backend -->|Mongoose| DB[("MongoDB Atlas")]
     Backend -->|LangChain| AIService["AI Service Layer"]
-    AIService -->|Primary| Groq1["Groq Llama-3 (Key 1)"]
-    AIService -->|Fallback| Groq2["Groq Llama-3 (Key 2)"]
+    AIService -->|Primary| Groq1["Groq Llama-3 (Primary)"]
+    AIService -->|Fallback| Groq2["Groq (Secondary Model)"]
 ```
 
 ### 💡 Why LangChain.js?
-We chose **LangChain.js** as the backbone of our AI service for three key reasons:
-1.  **Reliability (Groq-only Fallback):** It allows us to implement a multi-key fallback strategy within the Groq ecosystem. Since our prompts are highly tuned for Llama-3, this ensures output consistency that cross-provider (OpenAI) fallbacks might break.
-2.  **Structured Output:** Its output parsers help enforce strict JSON schemas, preventing the common "hallucination" errors where AI returns invalid data.
-3.  **Prompt Management:** It simplifies chaining prompts and context, which is essential for our "God Mode" document analysis.
+We started with standard LangChain but pivoted to **LangChain.js** to unify our stack. This switch allowed us to keep our entire codebase in **TypeScript**, eliminating the need for a Python microservice and ensuring end-to-end type safety between our backend and AI logic. It integrates natively with Node.js's event loop, allowing us to handle concurrent AI requests and real-time data efficiently.
+
+### 🛡️ Groq-on-Groq Fallback Strategy
+We intentionally avoided OpenAI for fallback. Our "God Mode" prompts are heavily fine-tuned for **Groq's Llama-3 models**. To ensure consistency, our fallback mechanism switches to a **different high-performance model within the Groq ecosystem**, guaranteeing that the AI's tone, formatting, and instruction-following remain stable even during primary model constraints. Sticking to a single service provider prevents the "prompt drift" that occurs when moving between different providers (e.g., Llama to GPT).
 
 ---
 
