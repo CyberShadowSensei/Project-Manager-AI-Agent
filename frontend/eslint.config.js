@@ -19,5 +19,9 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Temporarily disable for specific files if axios is only used for type guards
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^axios$' }],
+    },
   },
 ])

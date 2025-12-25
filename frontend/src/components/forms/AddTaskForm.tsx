@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useProject } from '../../context/ProjectContext';
 import { taskService, type Task } from '../../services/api';
 import { StatusBadge, PriorityBadge } from '../ui/BadgeComponents';
+import axios from 'axios';
 
 interface AddTaskFormProps {
   onSuccess: () => void;
@@ -48,18 +49,28 @@ export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
     setError(null);
     try {
       await taskService.create({
-        ...formData,
         project: currentProject?._id,
-        team: formData.team as any,
+        name: formData.name,
+        owner: formData.owner,
+        team: formData.team as 'Development' | 'Marketing' | 'Design' | 'Product' | 'Operations',
         status: formData.status as 'To Do' | 'In Progress' | 'Done',
         priority: formData.priority as 'Low' | 'Medium' | 'High',
+        dueDate: formData.dueDate,
+        description: formData.description,
         dependsOn: formData.dependsOn || undefined
       });
       triggerTaskRefresh(); // Trigger task refresh across the app
       onSuccess();
-    } catch (err: any) {
+
+    } catch (err: unknown) {
       console.error('Failed to create task:', err);
-      setError(err.response?.data?.message || 'Failed to create task. Please try again.');
+      let errorMessage = 'Failed to create task. Please try again.';
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

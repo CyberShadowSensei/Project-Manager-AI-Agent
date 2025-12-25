@@ -1,0 +1,42 @@
+.glassmorphism-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  width: 80vw;
+  height: 80vh;
+  margin: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.floating-element {
+  position: absolute;
+  animation: float 6s ease-in-out infinite;
+  transition: transform 0.5s ease-out;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.bg-box {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+}

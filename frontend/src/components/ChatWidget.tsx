@@ -44,10 +44,19 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         setTimeout(() => reject(new Error("Request timed out")), 30000)
       );
 
-      const res: any = await Promise.race([responsePromise, timeoutPromise]);
+interface AIMessageResponse {
+  content: string | { type: "text"; text: string }[];
+}
+
+// ... existing code ...
+
+      const res = (await Promise.race([responsePromise, timeoutPromise])) as AIMessageResponse;
       
       const aiText =
-        res.data?.answer ?? "Sorry, I could not generate a reply right now.";
+        typeof res.content === "string"
+          ? res.content
+          : res.content.map((c: { text?: string }) => c.text ?? "").join("");
+
       const aiMsg: Message = {
         id: crypto.randomUUID(),
         from: "ai",

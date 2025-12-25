@@ -9,6 +9,8 @@ import { InboxPage } from './pages/InboxPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ProjectProvider } from './context/ProjectContext'
+import GlassmorphismCard from './components/ui/GlassmorphismCard'
+import LandingPage from './pages/LandingPage' // Import LandingPage
 
 function App() {
   return (
@@ -18,7 +20,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/welcome" replace />} />
             <Route path="/welcome" element={<WelcomePage />} />
-            <Route path="/projects" element={<ProjectsPage />} /> {/* New/Re-added Project selection page */}
+            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/glassmorphism" element={<GlassmorphismCard />} />
             <Route path="/" element={<Layout />}>
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="assets" element={<AssetsPage />} />
@@ -27,6 +30,7 @@ function App() {
               <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
+            <Route path="/projects" element={<ProjectsPage />} />
           </Routes>
         </div>
       </BrowserRouter>

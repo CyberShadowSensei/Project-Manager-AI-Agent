@@ -1,53 +1,60 @@
-// llm.ts - FIXED FALLBACK
+// llm.ts - Groq -> Groq(second key) fallback
 import { ChatGroq } from "@langchain/groq";
-import { ChatOpenAI } from "@langchain/openai";
 import "dotenv/config";
 
-let groqModel: any = null;
+let groqPrimary: ChatGroq | null = null;
+let groqFallback: ChatGroq | null = null;
+
 try {
   if (process.env.GROQ_API_KEY) {
-    groqModel = new ChatGroq({
+    groqPrimary = new ChatGroq({
       apiKey: process.env.GROQ_API_KEY,
-      model: "llama-3.1-8b-instant",
+      model: process.env.AI_MODEL || "llama-3.1-8b-instant",
       temperature: 0.3,
     });
   }
-} catch (e) {
-  console.log("[LLM] Groq unavailable");
+} catch {
+  console.log("[LLM] Primary Groq unavailable at init");
 }
 
-const hasOpenAI = !!process.env.OPENAI_API_KEY;
-const openAIModel = hasOpenAI
-  ? new ChatOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4o-mini",
+try {
+  if (process.env.GROQ_FALLBACK_KEY) {
+    groqFallback = new ChatGroq({
+      apiKey: process.env.GROQ_FALLBACK_KEY,
+      model: process.env.AI_MODEL || "llama-3.1-8b-instant",
       temperature: 0.3,
-    })
-  : null;
+    });
+  }
+} catch {
+  console.log("[LLM] Fallback Groq unavailable at init");
+}
 
 /**
- * Invokes the LLM with fallback logic: Groq -> OpenAI -> Error
+ * Groq(primary) -> Groq(fallback) -> Error
  */
 export async function callLLM(messages: any[]) {
+  // 1. Try primary Groq
   try {
-    if (groqModel) return await groqModel.invoke(messages);
+    if (groqPrimary) {
+      return await groqPrimary.invoke(messages);
+    }
   } catch (err: any) {
-    console.error("[LLM] Groq failed:", err.message);
+    console.error("[LLM] Primary Groq failed:", err?.message || err);
   }
 
-  if (openAIModel) {
+  // 2. Try fallback Groq
+  if (groqFallback) {
     try {
-      console.log("[LLM] OpenAI fallback");
-      return await openAIModel.invoke(messages);
+      console.log("[LLM] Groq fallback key");
+      return await groqFallback.invoke(messages);
     } catch (err: any) {
-      console.error("[LLM] OpenAI fallback failed:", err.message);
+      console.error("[LLM] Fallback Groq failed:", err?.message || err);
       throw new Error("AI Temporarily Unavailable");
     }
   }
 
+  // 3. Nothing worked
   throw new Error("AI Temporarily Unavailable");
 }
 
-// Keep the default export for backward compatibility if needed, 
-// though we should switch to using callLLM
-export const llm = groqModel || openAIModel;
+export const llm = groqPrimary || groqFallback;

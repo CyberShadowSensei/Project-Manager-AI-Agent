@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, BarChart, Bar, Tooltip } from 'recharts'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useProject } from '../context/ProjectContext'
 import { analyticsService, type Analytics } from '../services/api'
 
@@ -12,7 +12,7 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true)
     try {
       const response = await analyticsService.getProjectAnalytics(currentProject?._id, activeTeam)
@@ -23,11 +23,11 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentProject?._id, activeTeam])
 
   useEffect(() => {
     fetchAnalytics()
-  }, [currentProject, activeTeam])
+  }, [currentProject, activeTeam, fetchAnalytics])
 
   const donutData = analytics ? [
     { name: 'To Do', value: analytics.statusBreakdown.todo, color: '#6366F1' },
@@ -61,7 +61,7 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
 
   return (
     <div className="flex gap-6 h-[210px] shrink-0">
-      <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex">
+      <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out animate-[fadeIn_0.4s_ease-out]">
         <div className="flex flex-col justify-between w-[55%]">
           <div>
             <div className="text-[11px] text-muted mb-1">Status Overview</div>
@@ -84,7 +84,7 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
         </div>
         <div className="flex-1 flex items-center justify-end">
           <div className="w-[130px] h-[130px]">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={displayDonutData}
@@ -106,7 +106,7 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
         </div>
       </div>
 
-      <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex flex-col">
+      <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex flex-col hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out animate-[fadeIn_0.5s_ease-out]">
         <div className="flex items-center justify-between mb-2">
           <div>
             <div className="text-[11px] text-muted mb-1">Completion Rate</div>
@@ -127,8 +127,8 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
             </div>
           </div>
         </div>
-        <div className="flex-1 relative">
-          <ResponsiveContainer>
+        <div className="flex-1 relative min-h-[80px]">
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart data={waveformData} margin={{ top: 10, bottom: 0, left: 0, right: 0 }}>
               <XAxis dataKey="x" hide />
               <Tooltip content={() => null} />
@@ -150,15 +150,15 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
         </div>
       </div>
 
-      <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex flex-col">
+      <div className="flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 flex flex-col hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-out animate-[fadeIn_0.6s_ease-out]">
         <div className="flex items-center justify-between mb-2">
           <div>
             <div className="text-[11px] text-muted mb-1">Priority Breakdown</div>
             <div className="text-[17px] font-semibold">Risk Distribution</div>
           </div>
         </div>
-        <div className="flex-1 h-full">
-          <ResponsiveContainer>
+        <div className="flex-1 h-full min-h-[100px]">
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart 
               data={[
                 { name: 'High', count: analytics?.priorityBreakdown.high || 0 },

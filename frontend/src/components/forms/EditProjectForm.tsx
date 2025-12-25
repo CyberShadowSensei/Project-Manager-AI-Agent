@@ -1,25 +1,22 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { projectService } from '../../services/api';
-import { useProject } from '../../context/ProjectContext'; // Ensure this path is correct
+import { type Project } from '../../services/api';
 import axios from 'axios';
 
-interface CreateProjectFormProps {
-  onSuccess: () => void;
+interface EditProjectFormProps {
+  project: Project;
+  onSuccess: (data: Partial<Project>) => Promise<void>;
   onCancel: () => void;
 }
 
-export const CreateProjectForm = ({ onSuccess, onCancel }: CreateProjectFormProps) => {
-  const { setCurrentProject } = useProject();
-  const navigate = useNavigate();
+export const EditProjectForm = ({ project, onSuccess, onCancel }: EditProjectFormProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
-    name: '',
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 1 week
-    description: ''
+    name: project.name,
+    startDate: project.startDate.split('T')[0],
+    endDate: project.endDate.split('T')[0],
+    description: project.description || ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,23 +24,18 @@ export const CreateProjectForm = ({ onSuccess, onCancel }: CreateProjectFormProp
     setError(null);
     setLoading(true);
     try {
-      const response = await projectService.create(formData);
-      const created = response.data;
-      // Set current project immediately
-      setCurrentProject(created);
-      onSuccess();
-      // Close modal and navigate to dashboard
-      navigate('/dashboard');
+      await onSuccess(formData);
 
     } catch (error: unknown) {
-      console.error('Failed to create project:', error);
-      let errorMsg = 'Failed to create project';
+      console.error('Failed to update project:', error);
+      let errorMsg = 'Failed to update project';
       if (axios.isAxiosError(error) && error.response?.data?.message) {
         errorMsg = error.response.data.message;
       } else if (error instanceof Error) {
         errorMsg = error.message;
       }
       setError(errorMsg);
+
     } finally {
       setLoading(false);
     }
@@ -119,7 +111,7 @@ export const CreateProjectForm = ({ onSuccess, onCancel }: CreateProjectFormProp
           disabled={loading}
           className="flex-1 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-sm font-medium transition-colors disabled:opacity-50"
         >
-          {loading ? 'Creating...' : 'Create Project'}
+          {loading ? 'Updating...' : 'Update Project'}
         </button>
       </div>
     </form>

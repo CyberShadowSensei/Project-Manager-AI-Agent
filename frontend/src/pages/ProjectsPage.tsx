@@ -4,11 +4,12 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useProject } from '../context/ProjectContext'
 import { Modal } from '../components/ui/Modal'
 import { CreateProjectForm } from '../components/forms/CreateProjectForm'
+import { EditProjectForm } from '../components/forms/EditProjectForm'
 import { type Project } from '../services/api' // Use type import
 
 export const ProjectsPage = () => {
   const navigate = useNavigate()
-  const { projects, loadingProjects, setCurrentProject, refreshProjects } = useProject()
+  const { projects, loadingProjects, setCurrentProject, refreshProjects, deleteProject, updateProject } = useProject()
   const [searchQuery, setSearchQuery] = useState('')
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
@@ -16,8 +17,12 @@ export const ProjectsPage = () => {
   const [scrollLeft, setScrollLeft] = useState(0)
   const carouselRef = useRef<HTMLDivElement>(null)
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
+  const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   
-  const filteredProjects = projects.filter(project =>
+  const projectsList = Array.isArray(projects) ? projects : [];
+
+  const filteredProjects = projectsList.filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchQuery.toLowerCase() || '')
   )
@@ -69,6 +74,18 @@ export const ProjectsPage = () => {
       })
     }
   }, [currentIndex, filteredProjects.length])
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      try {
+        await deleteProject(projectId);
+        await refreshProjects();
+        console.log('Project deleted:', projectId)
+      } catch (error) {
+        console.error('Failed to delete project:', error);
+      }
+    }
+  };
 
   if (loadingProjects) {
     return (
@@ -155,16 +172,25 @@ export const ProjectsPage = () => {
                           </div>
                         </div>
                       </button>
-                      <div className="px-5 pb-5">
+                      <div className="px-5 pb-5 flex gap-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            // TODO: Implement Edit Project Modal
-                            console.log('Edit project', project._id)
+                            setSelectedProject(project)
+                            setIsEditProjectModalOpen(true)
                           }}
                           className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/[0.06] text-sm text-muted hover:bg-white/8 hover:scale-105 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95 transition-all duration-200 ease-in-out"
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProject(project._id);
+                          }}
+                          className="w-full px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/[0.2] text-sm text-red-500 hover:bg-red-500/20 hover:scale-105 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] focus:outline-none focus:ring-2 focus:ring-red-500/50 active:scale-95 transition-all duration-200 ease-in-out"
+                        >
+                          Delete
                         </button>
                       </div>
                     </div>
@@ -217,6 +243,24 @@ export const ProjectsPage = () => {
             }}
             onCancel={() => setIsCreateProjectModalOpen(false)}
           />
+        </Modal>
+      )}
+
+      {isEditProjectModalOpen && selectedProject && (
+        <Modal
+            isOpen={isEditProjectModalOpen}
+            onClose={() => setIsEditProjectModalOpen(false)}
+            title="Edit Project"
+        >
+            <EditProjectForm
+                project={selectedProject}
+                onSuccess={async (data) => {
+                    await updateProject(selectedProject._id, data);
+                    setIsEditProjectModalOpen(false);
+                    refreshProjects();
+                }}
+                onCancel={() => setIsEditProjectModalOpen(false)}
+            />
         </Modal>
       )}
     </div>

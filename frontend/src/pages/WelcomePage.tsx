@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 
 export const WelcomePage = () => {
   const navigate = useNavigate()
-  const [, setMousePos] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
   const [imagePositions, setImagePositions] = useState([
     { x: 0, y: 0 },
@@ -21,8 +20,6 @@ export const WelcomePage = () => {
       
       const deltaX = (e.clientX - centerX) / rect.width
       const deltaY = (e.clientY - centerY) / rect.height
-      
-      setMousePos({ x: deltaX, y: deltaY })
       
       setImagePositions([
         { x: deltaX * 30, y: deltaY * 30 },
@@ -98,4 +95,3 @@ export const WelcomePage = () => {
     </div>
   )
 }
-

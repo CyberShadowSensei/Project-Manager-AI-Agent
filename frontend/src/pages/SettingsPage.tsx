@@ -19,119 +19,122 @@ export const SettingsPage = () => {
   });
 
   const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [profilePicture, setProfilePicture] = useState<string | null>(null)
+  const [profilePicture, setProfilePicture] = useState<string | null>(() => {
+    const savedProfilePicture = localStorage.getItem('profilePicture');
+    return savedProfilePicture !== null ? savedProfilePicture : null;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Load profile picture on mount
-  useEffect(() => {
-    const savedProfilePicture = localStorage.getItem('profilePicture')
-    if (savedProfilePicture) setProfilePicture(savedProfilePicture)
-  }, [])
+
+
   
-  // Persist profile picture
-  useEffect(() => {
-    if (profilePicture) {
-      localStorage.setItem('profilePicture', profilePicture)
-    }
-  }, [profilePicture])
-
-  const toggleEmail = () => {
-    const newValue = !emailNotifications;
-    setEmailNotifications(newValue);
-    localStorage.setItem('emailNotifications', JSON.stringify(newValue));
-  }
-
-  const togglePush = () => {
-    const newValue = !pushNotifications;
-    setPushNotifications(newValue);
-    localStorage.setItem('pushNotifications', JSON.stringify(newValue));
-  }
-
-  const toggle2FA = () => {
-    const newValue = !twoFactorAuth;
-    setTwoFactorAuth(newValue);
-    localStorage.setItem('twoFactorAuth', JSON.stringify(newValue));
-  }
-
-  const handlePictureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setProfilePicture(reader.result as string)
+    // Persist profile picture
+    useEffect(() => {
+      if (profilePicture) {
+        localStorage.setItem('profilePicture', profilePicture)
       }
-      reader.readAsDataURL(file)
+    }, [profilePicture])
+  
+    const toggleEmail = () => {
+      const newValue = !emailNotifications;
+      setEmailNotifications(newValue);
+      localStorage.setItem('emailNotifications', JSON.stringify(newValue));
     }
-  }
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-4">
-
-        {/* Profile */}
-        <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
-              {profilePicture ? (
-                <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-5 h-5 text-primary" />
-              )}
+  
+    const togglePush = () => {
+      const newValue = !pushNotifications;
+      setPushNotifications(newValue);
+      localStorage.setItem('pushNotifications', JSON.stringify(newValue));
+    }
+  
+    const toggle2FA = () => {
+      const newValue = !twoFactorAuth;
+      setTwoFactorAuth(newValue);
+      localStorage.setItem('twoFactorAuth', JSON.stringify(newValue));
+    }
+  
+    const handlePictureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setProfilePicture(reader.result as string)
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+  
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-2 gap-4">
+  
+          {/* Profile */}
+          <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
+                {profilePicture ? (
+                  <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-5 h-5 text-primary" />
+                )}
+              </div>
+              <div>
+                <div className="text-[17px] font-semibold">Profile Settings</div>
+                <div className="text-[11px] text-muted">Manage your personal information</div>
+              </div>
             </div>
-            <div>
-              <div className="text-[17px] font-semibold">Profile Settings</div>
-              <div className="text-[11px] text-muted">Manage your personal information</div>
+  
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-white/5">
+                <span className="text-sm text-muted">Profile Picture</span>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePictureUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button onClick={() => fileInputRef.current?.click()} className="text-sm text-primary hover:underline">
+                  Upload Picture
+                </button>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-sm text-muted">Display Name</span>
+                <span className="text-sm">User</span>
+              </div>
+  
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-sm text-muted">Email</span>
+                <span className="text-sm">user@example.com</span>
+              </div>
+  
+              {/* Language (English only) */}
+              <div className="flex justify-between py-2">
+                <span className="text-sm text-muted">Language</span>
+                <span className="text-sm">English</span>
+              </div>
             </div>
           </div>
-
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-white/5">
-              <span className="text-sm text-muted">Profile Picture</span>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handlePictureUpload}
-                accept="image/*"
-                className="hidden"
-              />
-              <button onClick={() => fileInputRef.current?.click()} className="text-sm text-primary hover:underline">
-                Upload Picture
-              </button>
+  
+          {/* Notifications */}
+          <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                <Bell className="w-5 h-5 text-secondary" />
+              </div>
+              <div>
+                <div className="text-[17px] font-semibold">Notifications</div>
+                <div className="text-[11px] text-muted">Configure alert preferences</div>
+              </div>
             </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-sm text-muted">Display Name</span>
-              <span className="text-sm">User</span>
-            </div>
-
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-sm text-muted">Email</span>
-              <span className="text-sm">user@example.com</span>
-            </div>
-
-            {/* Language (English only) */}
-            <div className="flex justify-between py-2">
-              <span className="text-sm text-muted">Language</span>
-              <span className="text-sm">English</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Notifications */}
-        <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-              <Bell className="w-5 h-5 text-secondary" />
-            </div>
-            <div>
-              <div className="text-[17px] font-semibold">Notifications</div>
-              <div className="text-[11px] text-muted">Configure alert preferences</div>
-            </div>
-          </div>
-
-          {[['Email Notifications', emailNotifications, toggleEmail],
-            ['Push Notifications', pushNotifications, togglePush]].map(
-            ([label, value, action]: any) => (
-              <div key={label} className="flex justify-between py-2">
+  
+                                {[
+  
+                                  ['Email Notifications', emailNotifications, toggleEmail],
+  
+                                  ['Push Notifications', pushNotifications, togglePush]
+  
+                                ].map(([label, value, action]) => (              <div key={label} className="flex justify-between py-2">
                 <span className="text-sm text-muted">{label}</span>
                 <button
                   onClick={action}

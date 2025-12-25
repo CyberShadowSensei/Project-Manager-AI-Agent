@@ -22,7 +22,7 @@ export const AssetsPage = () => {
 
   useEffect(() => {
     if (currentProject?.assets) {
-      setFiles(currentProject.assets.map((asset: any) => ({
+      setFiles(currentProject.assets.map((asset: { _id: string, name: string, size: number, type: string, uploadedAt: string }) => ({
         id: asset._id || Math.random().toString(36).substr(2, 9),
         name: asset.name,
         size: asset.size,

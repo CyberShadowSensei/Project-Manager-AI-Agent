@@ -33,8 +33,8 @@ export const DashboardPage = () => {
   }
 
   return (
-    <div className="animate-[fadeIn_0.3s_ease-out]">
-      <div className="mb-4">
+    <div className="animate-[fadeIn_0.3s_ease-out] flex flex-col gap-6">
+      <div className="">
         <div className="flex items-center gap-2">
           <input
             type="text"

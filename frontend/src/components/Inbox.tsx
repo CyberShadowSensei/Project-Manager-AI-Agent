@@ -22,11 +22,11 @@ export const Inbox = ({ searchQuery, activeTeam }: InboxProps) => {
         let currentMessages: InboxMessage[] = [];
 
         // Handle both response formats
-        if (Array.isArray(response.data)) {
+        if (Array.isArray(response.data)) { // This case should ideally not happen if the API always returns the new structure
             currentMessages = response.data;
-        } else if (response.data && (response.data as any).items) {
-            currentMessages = (response.data as any).items;
-            setIsConnected((response.data as any).connected);
+        } else if (response.data && (response.data as {items: InboxMessage[], connected: boolean})) {
+            currentMessages = response.data.items;
+            setIsConnected(response.data.connected);
         }
 
         if (activeTeam) {

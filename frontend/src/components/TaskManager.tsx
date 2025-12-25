@@ -221,7 +221,7 @@ const TaskCard = ({ title, subtitle, team, description, time, progress, priority
       <div className="mt-2">
         <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
+            className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>

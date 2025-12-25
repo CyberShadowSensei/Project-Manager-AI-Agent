@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useProject } from '../../context/ProjectContext';
 import { taskService, type Task } from '../../services/api';
 import { StatusBadge, PriorityBadge } from '../ui/BadgeComponents';
+import axios from 'axios';
 
 interface EditTaskFormProps {
   task: Task;
@@ -50,17 +51,27 @@ export const EditTaskForm = ({ task, onSuccess, onCancel }: EditTaskFormProps) =
     setError(null);
     try {
       await taskService.update(task._id, {
-        ...formData,
-        team: formData.team as any,
+        name: formData.name,
+        owner: formData.owner,
+        team: formData.team as 'Development' | 'Marketing' | 'Design' | 'Product' | 'Operations',
         status: formData.status as 'To Do' | 'In Progress' | 'Done',
         priority: formData.priority as 'Low' | 'Medium' | 'High',
+        dueDate: formData.dueDate,
+        description: formData.description,
         dependsOn: formData.dependsOn || undefined
-      } as any);
+      });
       triggerTaskRefresh(); // Trigger task refresh across the app
       onSuccess();
-    } catch (err: any) {
+
+    } catch (err: unknown) {
       console.error('Failed to update task:', err);
-      setError(err.response?.data?.message || 'Failed to update task. Please try again.');
+      let errorMessage = 'Failed to update task. Please try again.';
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -106,7 +117,7 @@ export const EditTaskForm = ({ task, onSuccess, onCancel }: EditTaskFormProps) =
           <select 
             className={inputClass}
             value={formData.team}
-            onChange={e => setFormData({...formData, team: e.target.value as any})}
+            onChange={e => setFormData({...formData, team: e.target.value as 'Development' | 'Marketing' | 'Design' | 'Product' | 'Operations'})}
           >
             <option value="Development" className={optionClass}>Development</option>
             <option value="Marketing" className={optionClass}>Marketing</option>
@@ -134,7 +145,7 @@ export const EditTaskForm = ({ task, onSuccess, onCancel }: EditTaskFormProps) =
             <select 
               className="bg-transparent text-sm text-white focus:outline-none cursor-pointer flex-1"
               value={formData.status}
-              onChange={e => setFormData({...formData, status: e.target.value as any})}
+              onChange={e => setFormData({...formData, status: e.target.value as 'To Do' | 'In Progress' | 'Done'})}
             >
               <option value="To Do" className={optionClass}>To Do</option>
               <option value="In Progress" className={optionClass}>In Progress</option>
@@ -152,7 +163,7 @@ export const EditTaskForm = ({ task, onSuccess, onCancel }: EditTaskFormProps) =
             <select 
               className="bg-transparent text-sm text-white focus:outline-none cursor-pointer flex-1"
               value={formData.priority}
-              onChange={e => setFormData({...formData, priority: e.target.value as any})}
+              onChange={e => setFormData({...formData, priority: e.target.value as 'Low' | 'Medium' | 'High'})}
             >
               <option value="Low" className={optionClass}>Low</option>
               <option value="Medium" className={optionClass}>Medium</option>
