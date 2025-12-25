@@ -26,6 +26,7 @@ Project Managers often struggle to keep track of deliverables, dependencies, and
 
 ### 🧠 AI Intelligence
 *   **Context-Aware Chat:** Upload PRDs, meeting notes, or specifications to the "AI Hub". The agent uses RAG (Retrieval-Augmented Generation) to answer questions based on your specific documents.
+*   **Chat Memory Buffer:** Remembers the last 10 interactions for natural, conversational follow-up questions.
 *   **Risk Prediction:** Automatically analyzes task dependencies and deadlines to flag "High Risk" items.
 *   **Smart Summaries:** Generates daily stand-up updates and project status reports on demand.
 

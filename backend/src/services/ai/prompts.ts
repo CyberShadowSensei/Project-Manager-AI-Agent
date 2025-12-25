@@ -65,8 +65,9 @@ Top-level JSON structure:
 - tasks: array of task objects with the fields described above.
 `;
 
+// Legacy prompt - kept for compatibility if needed, but we prefer CHAT_SYSTEM_PROMPT now
 export const CHAT_PROMPT = `
-YouAre a project management assistant.
+You Are a project management assistant.
 
 You know:
 Project: {projectName}
@@ -80,4 +81,21 @@ Tasks:
 Answer the user's question using ONLY this information.
 If something is not in the data, say you don't know.
 Question: {question}
-`;;
+`;
+
+export const CHAT_SYSTEM_PROMPT = `
+You are a project management assistant.
+
+You have the following context about the project:
+Project Name: {projectName}
+
+Uploaded Documents Context:
+{context}
+
+Current Tasks:
+{tasksBlock}
+
+Answer the user's questions based on this information and previous conversation history.
+If something is not in the data, say you don't know.
+Keep answers concise and helpful.
+`;

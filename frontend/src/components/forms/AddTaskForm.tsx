@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useProject } from '../../context/ProjectContext';
 import { taskService, type Task } from '../../services/api';
 import { StatusBadge, PriorityBadge } from '../ui/BadgeComponents';
 import axios from 'axios';
 
 interface AddTaskFormProps {
+  tasks: Task[];
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
+export const AddTaskForm = ({ tasks, onSuccess, onCancel }: AddTaskFormProps) => {
   const { currentProject, triggerTaskRefresh } = useProject();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [existingTasks, setExistingTasks] = useState<Task[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -25,21 +25,6 @@ export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
     description: '',
     dependsOn: ''
   });
-
-  // Fetch existing tasks for dependency dropdown
-  useEffect(() => {
-    const fetchTasks = async () => {
-      if (currentProject) {
-        try {
-          const res = await taskService.getByProject(currentProject._id);
-          setExistingTasks(res.data);
-        } catch (err) {
-          console.error("Failed to load tasks for dependencies", err);
-        }
-      }
-    };
-    fetchTasks();
-  }, [currentProject]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,7 +164,7 @@ export const AddTaskForm = ({ onSuccess, onCancel }: AddTaskFormProps) => {
             onChange={e => setFormData({...formData, dependsOn: e.target.value})}
           >
             <option value="" className={optionClass}>No Dependency</option>
-            {existingTasks.map(t => (
+            {tasks.map(t => (
               <option key={t._id} value={t._id} className={optionClass}>{t.name} ({t.status})</option>
             ))}
           </select>

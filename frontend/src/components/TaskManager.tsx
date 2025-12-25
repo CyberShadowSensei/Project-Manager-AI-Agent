@@ -20,6 +20,13 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [modalKey, setModalKey] = useState(0)
+
+  const openAddModal = () => {
+    setModalKey(prev => prev + 1);
+    setIsModalOpen(true);
+  }
+
 
   const fetchTasks = useCallback(async () => {
     // if (!currentProject) {
@@ -93,7 +100,7 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
         </div>
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={openAddModal}
             className="h-8 px-3 rounded-lg bg-primary text-[11px] flex items-center gap-1 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95 transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -152,11 +159,13 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
 
 
       <Modal 
+        key={modalKey}
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title="Create New Task"
       >
         <AddTaskForm 
+          tasks={tasks}
           onSuccess={handleTaskAdded} 
           onCancel={() => setIsModalOpen(false)} 
         />

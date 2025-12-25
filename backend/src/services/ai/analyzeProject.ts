@@ -1,5 +1,6 @@
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { ANALYZE_PROMPT, DOC_TO_TASKS_PROMPT, CHAT_PROMPT } from "./prompts.js";
+import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
+import { ANALYZE_PROMPT, DOC_TO_TASKS_PROMPT, CHAT_PROMPT, CHAT_SYSTEM_PROMPT } from "./prompts.js";
 import { callLLM } from "./llm.js";
 
 // ----- Types ----- 
@@ -64,8 +65,6 @@ Project name: {projectName}
 Tasks:
 {tasksBlock}
 `);
-
-const chatTemplate = ChatPromptTemplate.fromTemplate(CHAT_PROMPT);
 
 const docToTasksTemplate = ChatPromptTemplate.fromTemplate(`
 ${DOC_TO_TASKS_PROMPT}
@@ -211,22 +210,40 @@ export async function analyzeProject(
 }
 
 /**
- * Chat over project data
+ * Chat over project data with history buffer
  */
 export async function chatOverProject(
   project: Project,
   tasks: Task[],
-  question: string
+  question: string,
+  history: { role: 'user' | 'assistant', content: string }[] = []
 ): Promise<string> {
   // Truncate context to avoid blowing up the LLM context window
   const safeContext = (project.context || "No additional documents uploaded.").slice(0, 25000);
 
-  const messages = await chatTemplate.formatMessages({
+  // 1. Format the System Prompt
+  const systemPromptTemplate = ChatPromptTemplate.fromTemplate(CHAT_SYSTEM_PROMPT);
+  const systemMessages = await systemPromptTemplate.formatMessages({
     projectName: project.name,
     context: safeContext,
     tasksBlock: buildTasksBlock(tasks),
-    question,
   });
+
+  // 2. Build History Messages
+  const historyMessages = history.map(msg => {
+      if (msg.role === 'user') return new HumanMessage(msg.content);
+      return new AIMessage(msg.content);
+  });
+
+  // 3. Current Question
+  const currentMessage = new HumanMessage(question);
+
+  // 4. Combine
+  const messages = [
+      ...systemMessages,
+      ...historyMessages,
+      currentMessage
+  ];
 
   try {
     const res = await callLLM(messages);
@@ -240,50 +257,3 @@ export async function chatOverProject(
   }
 }
 
-/**
- * Extracts tasks from a PRD or document (God Mode)
- */
-export async function extractTasksFromText(
-  document: string
-): Promise<ExtractedTasksResult | { error: string; raw: string; cleaned: string }> {
-  const messages = await docToTasksTemplate.formatMessages({ document });
-
-  try {
-    const res = await callLLM(messages);
-    const textRaw =
-      typeof (res as any).content === "string"
-        ? (res as any).content
-        : ((res as any).content as any[])
-            .map((c: any) => c.text ?? "")
-            .join("");
-
-    const cleaned = cleanLLMText(textRaw); // reuse cleaner
-
-    try {
-      const parsed = JSON.parse(cleaned);
-      const wrapped: any = Array.isArray(parsed) ? { tasks: parsed } : parsed;
-
-      if (!isExtractedTasksResult(wrapped)) {
-        return {
-          error: "Doc-to-task AI output validation failed",
-          raw: textRaw,
-          cleaned,
-        };
-      }
-
-      return wrapped as ExtractedTasksResult;
-    } catch {
-      return {
-        error: "Failed to parse doc-to-task AI JSON",
-        raw: textRaw,
-        cleaned,
-      };
-    }
-  } catch (err: any) {
-    return {
-      error: err.message || "LLM invocation failed",
-      raw: "",
-      cleaned: "",
-    };
-  }
-}

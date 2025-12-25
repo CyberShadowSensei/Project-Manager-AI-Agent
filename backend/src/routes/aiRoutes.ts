@@ -4,6 +4,7 @@ import { type ITask } from '../models/Task.js';
 import { analyzeProject, chatOverProject, extractTasksFromText, type AnalyzeInput } from '../services/ai/analyzeProject.js'; // Person C's logic
 import Project from '../models/Project.js'; // Mongoose model for fetching
 import Task from '../models/Task.js'; // Mongoose model for fetching
+import ChatMessage from '../models/ChatMessage.js'; // Chat History Model
 
 const router = express.Router();
 
@@ -62,6 +63,16 @@ router.post('/chat/:projectId', async (req, res) => {
         }
         const tasksData: ITask[] = await Task.find({ project: projectId });
 
+        // Fetch recent chat history (last 10 messages)
+        const rawHistory = await ChatMessage.find({ project: projectId })
+            .sort({ createdAt: -1 })
+            .limit(10);
+        
+        const history = rawHistory.reverse().map(m => ({
+            role: m.role,
+            content: m.content
+        }));
+
         // Call Person C's AI chat logic
         const answer = await chatOverProject(
             { 
@@ -77,8 +88,22 @@ router.post('/chat/:projectId', async (req, res) => {
                 assignee: t.owner,
                 dependencies: t.dependsOn ? [t.dependsOn.toString()] : undefined,
             })),
-            question
+            question,
+            history
         );
+
+        // Save the conversation turn
+        await ChatMessage.create({
+            project: projectId,
+            role: 'user',
+            content: question
+        });
+
+        await ChatMessage.create({
+            project: projectId,
+            role: 'assistant',
+            content: answer
+        });
         
         res.json({ answer });
 
