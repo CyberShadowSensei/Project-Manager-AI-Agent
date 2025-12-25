@@ -1,6 +1,6 @@
 # PM AI Agent - Smarter Project Management (Team: The NPCs)
 
-An AI-powered project management assistant designed to streamline planning, task tracking, and team coordination. This agent summarizes status, predicts risks via ML, supports natural language commands, and integrates with Slack.
+An AI-powered project management assistant designed to streamline planning, task tracking, and team coordination. This agent summarizes status, predicts risks via machine learning, supports natural language commands, and integrates with Slack.
 
 ![Status](https://img.shields.io/badge/Status-Feature%20Complete-green)
 ![Stack](https://img.shields.io/badge/Stack-MERN%20%2B%20LangChain-blue)
@@ -24,8 +24,8 @@ Project Managers often struggle to keep track of deliverables, dependencies, and
 
 ## 🚀 Key Features Implemented
 
-### 🧠 AI Intelligence ("God Mode")
-*   **Context-Aware Chat:** Upload PRDs, meeting notes, or specs to the "AI Hub". The agent uses RAG (Retrieval-Augmented Generation) to answer questions based on your specific documents.
+### 🧠 AI Intelligence
+*   **Context-Aware Chat:** Upload PRDs, meeting notes, or specifications to the "AI Hub". The agent uses RAG (Retrieval-Augmented Generation) to answer questions based on your specific documents.
 *   **Risk Prediction:** Automatically analyzes task dependencies and deadlines to flag "High Risk" items.
 *   **Smart Summaries:** Generates daily stand-up updates and project status reports on demand.
 
@@ -59,7 +59,7 @@ graph TD
 We started with standard LangChain but pivoted to **LangChain.js** to unify our stack. This switch allowed us to keep our entire codebase in **TypeScript**, eliminating the need for a Python microservice and ensuring end-to-end type safety between our backend and AI logic. It integrates natively with Node.js's event loop, allowing us to handle concurrent AI requests and real-time data efficiently.
 
 ### 🛡️ Groq-on-Groq Fallback Strategy
-We intentionally avoided OpenAI for fallback. Our "God Mode" prompts are heavily fine-tuned for **Groq's Llama-3 models**. To ensure consistency, our fallback mechanism switches to a **different high-performance model within the Groq ecosystem**, guaranteeing that the AI's tone, formatting, and instruction-following remain stable even during primary model constraints. Sticking to a single service provider prevents the "prompt drift" that occurs when moving between different providers (e.g., Llama to GPT).
+We intentionally avoided OpenAI for fallback. Our context-aware prompts are heavily fine-tuned for **Groq's Llama-3 models**. To ensure consistency, our fallback mechanism switches to a **different high-performance model within the Groq ecosystem**, guaranteeing that the AI's tone, formatting, and instruction-following remain stable even during primary model constraints. Sticking to a single service provider prevents the "prompt drift" that occurs when moving between different providers (e.g., Llama to GPT).
 
 ---
 
