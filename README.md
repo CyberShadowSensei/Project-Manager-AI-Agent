@@ -7,7 +7,7 @@ An AI-powered project management assistant designed to streamline planning, task
 
 ## 🔗 Project Links
 *   **Deployment URL:** [https://project-manager-ai-agent-green.vercel.app/](https://project-manager-ai-agent-green.vercel.app/)
-*   **Demo Video:** [Link coming soon]
+*   **Demo Video:** [https://drive.google.com/file/d/1STgD1HROeukAbWlM41Dn8AYyMh_B8a7J/view?usp=drivesdk]
 
 ## 📌 Problem Statement: PM AI Agent – Smarter Project Management
 
