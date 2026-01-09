@@ -14,6 +14,8 @@ interface ProjectContextType {
   refreshProjects: () => Promise<void>;
   taskRefreshTrigger: number;
   triggerTaskRefresh: () => void;
+  riskLevel: 'Low' | 'Medium' | 'High' | 'none';
+  refreshRisk: () => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -23,6 +25,27 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [taskRefreshTrigger, setTaskRefreshTrigger] = useState(0);
+  const [riskLevel, setRiskLevel] = useState<'Low' | 'Medium' | 'High' | 'none'>('none');
+
+  const refreshRisk = useCallback(async () => {
+    if (!currentProject) {
+      setRiskLevel('none');
+      return;
+    }
+    try {
+      const { aiService } = await import('../services/api');
+      const response = await aiService.getInsights(currentProject._id);
+      setRiskLevel(response.data.riskLevel || 'Low');
+    } catch (err) {
+      console.error("Failed to fetch risk level", err);
+    }
+  }, [currentProject]);
+
+  useEffect(() => {
+    if (currentProject) {
+      refreshRisk();
+    }
+  }, [currentProject, taskRefreshTrigger, refreshRisk]);
 
   const refreshProjects = useCallback(async () => {
     try {
@@ -86,7 +109,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [refreshProjects]);
 
   return (
-    <ProjectContext.Provider value={{ projects, currentProject, setCurrentProject, addProject, updateProject, deleteProject, loadingProjects, refreshProjects, taskRefreshTrigger, triggerTaskRefresh }}>
+    <ProjectContext.Provider value={{ projects, currentProject, setCurrentProject, addProject, updateProject, deleteProject, loadingProjects, refreshProjects, taskRefreshTrigger, triggerTaskRefresh, riskLevel, refreshRisk }}>
       {children}
     </ProjectContext.Provider>
   );

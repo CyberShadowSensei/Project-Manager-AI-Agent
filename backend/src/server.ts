@@ -8,6 +8,7 @@ import aiRoutes from './routes/aiRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import inboxRoutes from './routes/inboxRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import integrationRoutes from './routes/integrationRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +25,7 @@ const startServer = async () => {
     app.use('/api/analytics', analyticsRoutes);
     app.use('/api/inbox', inboxRoutes);
     app.use('/api/upload', uploadRoutes);
+    app.use('/api/integrations', integrationRoutes);
 
     app.get('/healthz', (req, res) => {
         res.status(200).send('ok');
