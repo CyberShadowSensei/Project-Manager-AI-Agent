@@ -38,6 +38,7 @@ router.post('/analyze/:projectId', async (req, res) => {
                 id: t._id.toString(),
                 title: t.name,
                 status: t.status.toLowerCase().replace(' ', '_') as any, // e.g., "To Do" -> "to_do"
+                priority: t.priority,
                 dueDate: t.dueDate ? t.dueDate.toISOString() : undefined,
                 assignee: t.owner,
                 dependencies: t.dependsOn ? [t.dependsOn.toString()] : undefined,
@@ -91,6 +92,7 @@ router.post('/chat/:projectId', async (req, res) => {
                 id: t._id.toString(),
                 title: t.name,
                 status: t.status.toLowerCase().replace(' ', '_') as any,
+                priority: t.priority,
                 dueDate: t.dueDate ? t.dueDate.toISOString() : undefined,
                 assignee: t.owner,
                 dependencies: t.dependsOn ? [t.dependsOn.toString()] : undefined,

@@ -23,6 +23,9 @@ We have successfully implemented and polished the "PRD-to-Task Generator Engine"
 *   **✅ Unified UI/UX:**
     *   Added the "Generate Tasks" trigger to the **Dashboard** (next to Search) and **Task Manager** header for easy access.
     *   Standardized terminology across the app to "Project Docs".
+*   **✅ Connected Brain (Context Injection):**
+    *   Optimized task injection to explicitly highlight **Overdue** and **High Priority** tasks in a "CRITICAL ALERTS" section.
+    *   Updated AI system prompt to prioritize these alerts, ensuring the agent provides immediate situational awareness.
 *   **✅ Task Management Improvements:**
     *   Implemented **Task Deletion** with a hover-reveal trash icon on Task Cards.
     *   Removed redundant "Edit Task" buttons from the header.

@@ -9,6 +9,7 @@ export interface Task {
   id: string;
   title: string;
   status: "todo" | "in_progress" | "done" | "blocked";
+  priority?: "Low" | "Medium" | "High";
   dueDate?: string; // ISO date
   assignee?: string;
   dependencies?: string[];
@@ -79,23 +80,38 @@ const docToTasksTemplate = ChatPromptTemplate.fromMessages([
 function buildTasksBlock(tasks: Task[]): string {
   if (!tasks.length) return "No tasks found in the database.";
   
-  // Group by status for better readability
+  const today = new Date();
+  const criticalItems: string[] = [];
   const byStatus: Record<string, string[]> = {};
   
   tasks.forEach(t => {
       const status = t.status || 'unknown';
-      if (!byStatus[status]) byStatus[status] = [];
+      const isOverdue = t.dueDate && new Date(t.dueDate) < today && status !== 'done';
+      const isHighPriority = t.priority === 'High';
       
       const deps = t.dependencies?.length ? `(Blocked by: ${t.dependencies.join(", ")})` : "";
       const due = t.dueDate ? `[Due: ${t.dueDate.split('T')[0]}]` : "";
       const assignee = t.assignee ? `@{${t.assignee}}` : "Unassigned";
-      
-      byStatus[status].push(`- ${t.title} ${assignee} ${due} ${deps}`);
+      const taskLine = `- ${t.title} ${assignee} ${due} ${deps}`;
+
+      if (isOverdue || isHighPriority) {
+          criticalItems.push(`${taskLine} ${isOverdue ? "!! OVERDUE !!" : ""} ${isHighPriority ? "[HIGH PRIORITY]" : ""}`);
+      }
+
+      if (!byStatus[status]) byStatus[status] = [];
+      byStatus[status].push(taskLine);
   });
 
-  return Object.entries(byStatus).map(([status, items]) => {
+  let block = "";
+  if (criticalItems.length > 0) {
+      block += `### CRITICAL ALERTS (Prioritize these!)\n${criticalItems.join("\n")}\n\n`;
+  }
+
+  block += Object.entries(byStatus).map(([status, items]) => {
       return `STATUS: ${status.toUpperCase()}\n${items.join("\n")}`;
   }).join("\n\n");
+
+  return block;
 }
 
 function isTaskArray(arr: any): arr is { id: string; title: string }[] {
