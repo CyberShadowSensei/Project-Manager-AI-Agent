@@ -32,3 +32,5 @@ logs/
 # Temporary Files
 tmp/
 temp/
+# Local Dev Logs
+project_log.md

@@ -1,6 +1,9 @@
 // llm.ts - Groq -> Groq(second key) fallback
 import { ChatGroq } from "@langchain/groq";
+import { CircuitBreaker } from "./CircuitBreaker.js";
 import "dotenv/config";
+
+const breaker = new CircuitBreaker(3, 30000); // 3 failures -> 30s cooldown
 
 let groqPrimary: ChatGroq | null = null;
 let groqFallback: ChatGroq | null = null;
@@ -31,30 +34,34 @@ try {
 
 /**
  * Groq(primary) -> Groq(fallback) -> Error
+ * Wrapped in Circuit Breaker for resilience.
  */
 export async function callLLM(messages: any[]) {
-  // 1. Try primary Groq
-  try {
-    if (groqPrimary) {
-      return await groqPrimary.invoke(messages);
-    }
-  } catch (err: any) {
-    console.error("[LLM] Primary Groq failed:", err?.message || err);
-  }
-
-  // 2. Try fallback Groq
-  if (groqFallback) {
+  return breaker.execute(async () => {
+    // 1. Try primary Groq
     try {
-      console.log("[LLM] Groq fallback key");
-      return await groqFallback.invoke(messages);
+      if (groqPrimary) {
+        return await groqPrimary.invoke(messages);
+      }
     } catch (err: any) {
-      console.error("[LLM] Fallback Groq failed:", err?.message || err);
-      throw new Error("AI Temporarily Unavailable");
+      console.error("[LLM] Primary Groq failed:", err?.message || err);
     }
-  }
 
-  // 3. Nothing worked
-  throw new Error("AI Temporarily Unavailable");
+    // 2. Try fallback Groq
+    if (groqFallback) {
+      try {
+        console.log("[LLM] Groq fallback key");
+        return await groqFallback.invoke(messages);
+      } catch (err: any) {
+        console.error("[LLM] Fallback Groq failed:", err?.message || err);
+        // Throwing error here triggers the Circuit Breaker failure count
+        throw new Error("AI Temporarily Unavailable");
+      }
+    }
+
+    // 3. Nothing worked
+    throw new Error("AI Temporarily Unavailable");
+  });
 }
 
 export const llm = groqPrimary || groqFallback;
