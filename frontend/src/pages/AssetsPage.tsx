@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Upload, X, File } from 'lucide-react'
+import { Upload, X, File, Sparkles } from 'lucide-react'
 import { useProject } from "../context/ProjectContext";
 import { ChatWidget } from "../components/ChatWidget";
 import { projectService } from "../services/api";
+import { PRDParserModal } from "../components/forms/PRDParserModal";
 
 interface UploadedFile {
   id: string
@@ -13,12 +14,13 @@ interface UploadedFile {
 }
 
 export const AssetsPage = () => {
-  const { currentProject } = useProject();
+  const { currentProject, setCurrentProject, triggerTaskRefresh } = useProject();
   const projectId = currentProject?._id ?? "";
   
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isPRDModalOpen, setIsPRDModalOpen] = useState(false)
 
   useEffect(() => {
     if (currentProject?.assets) {
@@ -34,6 +36,12 @@ export const AssetsPage = () => {
     }
   }, [currentProject]);
 
+  const handlePRDImported = () => {
+    setIsPRDModalOpen(false)
+    triggerTaskRefresh()
+    // Optionally refresh project context if the modal did something that updates context, but it mostly creates tasks
+  }
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
@@ -44,6 +52,9 @@ export const AssetsPage = () => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragging(false)
+    
+    const droppedFiles = Array.from(e.dataTransfer.files)
+    handleFiles(droppedFiles)
   }
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -72,22 +83,37 @@ export const AssetsPage = () => {
     
     try {
       const newFiles: UploadedFile[] = [];
+      let lastUploadedFile = null;
       
       // Upload files sequentially (could be parallelized)
       for (const file of droppedFiles) {
-        await projectService.uploadFile(projectId, file);
-        // Assuming the backend returns the full updated list or we construct it
-        // Ideally, backend returns the metadata of the uploaded file
+        const response = await projectService.uploadFile(projectId, file);
+        const uploadedAssets = response.data.assets;
+        const latestAsset = uploadedAssets[uploadedAssets.length - 1]; 
+        lastUploadedFile = file;
+
         newFiles.push({
-          id: Math.random().toString(36).substr(2, 9), // Temp ID until refresh
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          uploadedAt: new Date()
+          id: latestAsset._id,
+          name: latestAsset.name,
+          size: latestAsset.size,
+          type: latestAsset.type,
+          uploadedAt: new Date(latestAsset.uploadedAt)
         });
       }
-      
+
       setFiles(prev => [...prev, ...newFiles]);
+
+      // CRITICAL: Refresh the project context so ChatWidget sees the new text immediately
+      const updatedProjectRes = await projectService.getById(projectId);
+      setCurrentProject(updatedProjectRes.data);
+
+      // Dispatch custom event to notify AI AFTER the context is updated
+      if (lastUploadedFile) {
+        window.dispatchEvent(new CustomEvent('new-asset-uploaded', { 
+          detail: { fileName: lastUploadedFile.name, projectId } 
+        }));
+      }
+
     } catch (error) {
       console.error("Upload failed", error);
       alert("Failed to upload files.");
@@ -96,8 +122,18 @@ export const AssetsPage = () => {
     }
   }
 
-  const handleRemoveFile = (id: string) => {
-    setFiles(files.filter(file => file.id !== id))
+  const handleRemoveFile = async (id: string) => {
+    if (!projectId) return;
+    
+    if (confirm("Are you sure? This will remove the file from the project's AI context.")) {
+        try {
+            await projectService.deleteFile(projectId, id);
+            setFiles(files.filter(file => file.id !== id));
+        } catch (error) {
+            console.error("Failed to delete file", error);
+            alert("Failed to delete file.");
+        }
+    }
   }
 
   const formatFileSize = (bytes: number) => {
@@ -122,9 +158,19 @@ export const AssetsPage = () => {
     <div className="flex gap-6 h-full">
       {/* Left Column: Context Manager */}
       <div className="flex-1 flex flex-col gap-6 overflow-y-auto">
-        <div>
-          <h1 className="text-[26px] leading-7 font-semibold mb-2">Project Intelligence</h1>
-          <p className="text-muted text-sm">Upload documents to give the AI context about your project.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[26px] leading-7 font-semibold mb-2">Project Intelligence</h1>
+            <p className="text-muted text-sm">Upload documents to give the AI context about your project.</p>
+          </div>
+          <button 
+            onClick={() => setIsPRDModalOpen(true)}
+            disabled={!currentProject}
+            className="h-9 px-4 rounded-lg bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 text-sm text-purple-300 flex items-center gap-2 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500/50 active:scale-95 transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Generate Tasks from Project Docs</span>
+          </button>
         </div>
         
         {/* Upload Area */}
@@ -228,6 +274,12 @@ export const AssetsPage = () => {
             <ChatWidget projectId={projectId} inline={true} />
          </div>
       </div>
+      
+      <PRDParserModal
+        isOpen={isPRDModalOpen}
+        onClose={() => setIsPRDModalOpen(false)}
+        onSuccess={handlePRDImported}
+      />
     </div>
   )
 }

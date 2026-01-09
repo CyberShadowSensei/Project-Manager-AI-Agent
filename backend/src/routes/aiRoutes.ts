@@ -1,4 +1,7 @@
 import express from 'express';
+import multer from 'multer';
+import fs from 'fs';
+import { createRequire } from 'module';
 import { type IProject } from '../models/Project.js';
 import { type ITask } from '../models/Task.js';
 import { analyzeProject, chatOverProject, extractTasksFromText, type AnalyzeInput } from '../services/ai/analyzeProject.js'; // Person C's logic
@@ -6,7 +9,11 @@ import Project from '../models/Project.js'; // Mongoose model for fetching
 import Task from '../models/Task.js'; // Mongoose model for fetching
 import ChatMessage from '../models/ChatMessage.js'; // Chat History Model
 
+const require = createRequire(import.meta.url);
+const pdf = require('pdf-parse');
+
 const router = express.Router();
+const upload = multer({ dest: 'uploads/' });
 
 // POST AI Analysis for a project
 router.post('/analyze/:projectId', async (req, res) => {
@@ -113,7 +120,7 @@ router.post('/chat/:projectId', async (req, res) => {
     }
 });
 
-// POST God Mode: Doc-to-Tasks
+// POST God Mode: Doc-to-Tasks (Raw Text)
 router.post('/doc-to-tasks', async (req, res) => {
     const { document } = req.body;
 
@@ -130,5 +137,40 @@ router.post('/doc-to-tasks', async (req, res) => {
     }
 });
 
+// POST God Mode: Doc-to-Tasks (File Upload)
+router.post('/extract-from-file', upload.single('file'), async (req, res) => {
+    const file = req.file;
+
+    if (!file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    try {
+        let extractedText = '';
+
+        if (file.mimetype === 'application/pdf') {
+            const dataBuffer = fs.readFileSync(file.path);
+            const data = await pdf(dataBuffer);
+            extractedText = data.text;
+        } else {
+            // Assume text/plain, markdown, etc.
+            extractedText = fs.readFileSync(file.path, 'utf8');
+        }
+
+        // Clean up temp file
+        fs.unlinkSync(file.path);
+
+        const result = await extractTasksFromText(extractedText);
+        res.json(result);
+
+    } catch (error: any) {
+        // Try to clean up file if it exists
+        if (file && file.path && fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+        }
+        console.error("Extract-from-file Route Error:", error);
+        res.status(500).json({ message: "Failed to process file and extract tasks", error: error.message });
+    }
+});
 
 export default router;

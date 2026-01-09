@@ -7,7 +7,7 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// --- INTERFACES (matching backend models) ---
+// --- INTERFACES (Strictly matching backend/src/models) ---
 
 export interface Project {
   _id: string;
@@ -16,7 +16,6 @@ export interface Project {
   endDate: string;
   createdAt: string;
   description?: string;
-  image?: string;
   context?: string;
   assets?: {
     _id: string;
@@ -25,6 +24,8 @@ export interface Project {
     size: number;
     uploadedAt: string;
   }[];
+  // image is not in backend model, but might be virtual/future
+  image?: string;
 }
 
 export interface Task {
@@ -32,12 +33,13 @@ export interface Task {
   project?: string;
   name: string;
   owner: string;
-  team?: 'Marketing' | 'Development' | 'Design' | 'Product' | 'Operations';
+  team: 'Marketing' | 'Development' | 'Design' | 'Product' | 'Operations';
   status: 'To Do' | 'In Progress' | 'Done';
   priority: 'Low' | 'Medium' | 'High';
   dueDate: string;
   description?: string;
-  dependsOn?: { // For fetched tasks, it's populated
+  createdAt?: string;
+  dependsOn?: { 
     _id: string;
     name: string;
     status: string;
@@ -45,8 +47,16 @@ export interface Task {
 }
 
 // For creating/updating tasks, dependsOn is just the ID string
-export interface TaskUpdateData extends Omit<Task, '_id' | 'createdAt' | 'dependsOn'> {
-  dependsOn?: string | null;
+export interface TaskUpdateData {
+  project?: string;
+  name: string;
+  owner: string;
+  team: 'Marketing' | 'Development' | 'Design' | 'Product' | 'Operations';
+  status: 'To Do' | 'In Progress' | 'Done';
+  priority: 'Low' | 'Medium' | 'High';
+  dueDate: string;
+  description?: string;
+  dependsOn?: string | null | undefined;
 }
 
 export interface Analytics {
@@ -83,7 +93,6 @@ export interface AIInsights {
   }[];
 }
 
-// Unified Inbox Message Interface
 export interface InboxMessage {
   _id?: string;
   id?: string; // Slack uses 'id' or 'ts'
@@ -98,14 +107,25 @@ export interface InboxMessage {
   ts?: string; // Slack timestamp
 }
 
+// --- HELPER ---
+
+export const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error) && error.response?.data?.message) {
+    return error.response.data.message;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'An unexpected error occurred';
+};
 
 // --- API FUNCTIONS ---
 
 export const projectService = {
   getAll: () => api.get<Project[]>('/api/projects'),
   getById: (id: string) => api.get<Project>(`/api/projects/${id}`),
-  create: (data: Omit<Project, '_id' | 'createdAt'>) => api.post<Project>('/api/projects', data),
-  update: (id: string, data: Partial<Omit<Project, '_id' | 'createdAt'>>) => api.patch<Project>(`/api/projects/${id}`, data),
+  create: (data: Omit<Project, '_id' | 'createdAt' | 'context' | 'assets'>) => api.post<Project>('/api/projects', data),
+  update: (id: string, data: Partial<Project>) => api.patch<Project>(`/api/projects/${id}`, data),
   remove: (id: string) => api.delete(`/api/projects/${id}`),
   uploadFile: (projectId: string, file: File) => {
     const formData = new FormData();
@@ -116,6 +136,7 @@ export const projectService = {
       },
     });
   },
+  deleteFile: (projectId: string, assetId: string) => api.delete(`/api/upload/${projectId}/${assetId}`),
 };
 
 export const taskService = {
@@ -137,11 +158,19 @@ export const analyticsService = {
 export const aiService = {
   getInsights: (projectId: string) => api.post<AIInsights>(`/api/ai/analyze/${projectId}`),
   chatWithAI: (projectId: string, question: string) => api.post<{ answer: string }>(`/api/ai/chat/${projectId}`, { question }),
+  extractTasks: (document: string) => api.post<{ tasks: any[] }>('/api/ai/doc-to-tasks', { document }),
+  extractTasksFromFile: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<{ summary: string; tasks: any[] }>('/api/ai/extract-from-file', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export const inboxService = {
-  // Tries to get messages. If Slack is set up, it hits /inbox (root).
-  // If not, it falls back to mock data handled by the backend.
   getMessages: (searchQuery?: string) => {
     return api.get<{ items: InboxMessage[], connected: boolean }>('/api/inbox', {
       params: { searchQuery },

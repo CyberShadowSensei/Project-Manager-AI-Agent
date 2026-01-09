@@ -47,11 +47,14 @@ export interface ExtractedTask {
   description: string;
   status: "todo";
   dueDate: string | null;
-  assignee: null;
+  assignee: string | null;
+  team: string | null;
+  priority: "Low" | "Medium" | "High" | "Critical";
   dependencies: number[];
 }
 
 export interface ExtractedTasksResult {
+  summary: string;
   tasks: ExtractedTask[];
 }
 
@@ -66,23 +69,33 @@ Tasks:
 {tasksBlock}
 `);
 
-const docToTasksTemplate = ChatPromptTemplate.fromTemplate(`
-${DOC_TO_TASKS_PROMPT}
-
-Document:
-{document}
-`);
+const docToTasksTemplate = ChatPromptTemplate.fromMessages([
+  ["system", DOC_TO_TASKS_PROMPT],
+  ["human", "Document:\n{document}"]
+]);
 
 // ----- Helpers ----- 
 
 function buildTasksBlock(tasks: Task[]): string {
-  if (!tasks.length) return "No tasks.";
-  return tasks
-    .map((t) => {
-      const deps = t.dependencies?.length ? t.dependencies.join(",") : "none";
-      return `- [${t.status}] (${t.id}) "${t.title}" assignee=${t.assignee || "unassigned"} due=${t.dueDate || "none"} deps=${deps}`;
-    })
-    .join("\n");
+  if (!tasks.length) return "No tasks found in the database.";
+  
+  // Group by status for better readability
+  const byStatus: Record<string, string[]> = {};
+  
+  tasks.forEach(t => {
+      const status = t.status || 'unknown';
+      if (!byStatus[status]) byStatus[status] = [];
+      
+      const deps = t.dependencies?.length ? `(Blocked by: ${t.dependencies.join(", ")})` : "";
+      const due = t.dueDate ? `[Due: ${t.dueDate.split('T')[0]}]` : "";
+      const assignee = t.assignee ? `@{${t.assignee}}` : "Unassigned";
+      
+      byStatus[status].push(`- ${t.title} ${assignee} ${due} ${deps}`);
+  });
+
+  return Object.entries(byStatus).map(([status, items]) => {
+      return `STATUS: ${status.toUpperCase()}\n${items.join("\n")}`;
+  }).join("\n\n");
 }
 
 function isTaskArray(arr: any): arr is { id: string; title: string }[] {
@@ -122,19 +135,41 @@ function isAIInsights(obj: any): obj is AIInsights {
 
 function isExtractedTask(obj: any): obj is ExtractedTask {
   if (!obj || typeof obj !== "object") return false;
+  
+  // Relaxed ID check
+  if (typeof obj.id === "string") {
+      obj.id = parseInt(obj.id, 10);
+      if (isNaN(obj.id)) obj.id = Math.floor(Math.random() * 10000); // Fallback
+  }
   if (typeof obj.id !== "number") return false;
+
   if (typeof obj.title !== "string") return false;
-  if (typeof obj.description !== "string") return false;
-  if (obj.status !== "todo") return false;
-  if (!(obj.dueDate === null || typeof obj.dueDate === "string")) return false;
-  if (obj.assignee !== null) return false;
-  if (!Array.isArray(obj.dependencies)) return false;
-  if (!obj.dependencies.every((d: any) => typeof d === "number")) return false;
+  // Allow missing description
+  if (!obj.description) obj.description = "";
+  
+  // Loose check for status
+  if (!obj.status) obj.status = "todo";
+  
+  // Ensure string fields
+  if (typeof obj.dueDate !== "string") obj.dueDate = null;
+  if (typeof obj.assignee !== "string") obj.assignee = null;
+  if (typeof obj.team !== "string") obj.team = "Product";
+  if (typeof obj.priority !== "string") obj.priority = "Medium";
+
+  // Ensure dependencies is array of numbers
+  if (!Array.isArray(obj.dependencies)) {
+      obj.dependencies = [];
+  } else {
+      // Filter out non-numbers or convert strings
+      obj.dependencies = obj.dependencies.map((d: any) => typeof d === 'string' ? parseInt(d, 10) : d).filter((d: any) => !isNaN(d));
+  }
   return true;
 }
 
 function isExtractedTasksResult(obj: any): obj is ExtractedTasksResult {
   if (!obj || typeof obj !== "object") return false;
+  // Allow missing summary
+  if (!obj.summary) obj.summary = "No summary provided.";
   if (!Array.isArray(obj.tasks)) return false;
   return obj.tasks.every(isExtractedTask);
 }
@@ -281,6 +316,7 @@ export async function extractTasksFromText(
       const wrapped: any = Array.isArray(parsed) ? { tasks: parsed } : parsed;
 
       if (!isExtractedTasksResult(wrapped)) {
+        console.error("Doc-to-task Validation Failed.", { raw: textRaw, parsed: wrapped });
         return {
           error: "Doc-to-task AI output validation failed",
           raw: textRaw,
@@ -290,6 +326,7 @@ export async function extractTasksFromText(
 
       return wrapped as ExtractedTasksResult;
     } catch {
+      console.error("Doc-to-task JSON Parse Failed.", { raw: textRaw, cleaned });
       return {
         error: "Failed to parse doc-to-task AI JSON",
         raw: textRaw,

@@ -1,10 +1,11 @@
-import { Plus } from 'lucide-react'
+import { Plus, Trash2, Sparkles } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { useProject } from '../context/ProjectContext'
 import { taskService, type Task } from '../services/api'
 import { Modal } from './ui/Modal' // Assuming Modal.tsx is in components/ui
 import { AddTaskForm } from './forms/AddTaskForm' // Assuming AddTaskForm.tsx is in components/forms
 import EditTaskModal from './forms/EditTaskModal'
+import { PRDParserModal } from './forms/PRDParserModal'
 
 const columns = ['To Do', 'In Progress', 'Done']
 
@@ -19,6 +20,7 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isPRDModalOpen, setIsPRDModalOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [modalKey, setModalKey] = useState(0)
 
@@ -79,6 +81,23 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
     fetchTasks() // Refresh tasks after editing one
   }
 
+  const handleDeleteTask = async (taskId: string) => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      try {
+        await taskService.remove(taskId)
+        fetchTasks() // Refresh tasks after deletion
+      } catch (error) {
+        console.error('Failed to delete task:', error)
+        alert('Failed to delete task. Please try again.')
+      }
+    }
+  }
+
+  const handlePRDImported = () => {
+    setIsPRDModalOpen(false)
+    fetchTasks()
+  }
+
   const getStatusProgress = (status: string) => {
     switch (status) {
       case 'Done': return 100
@@ -100,23 +119,20 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
         </div>
         <div className="flex items-center gap-3">
           <button 
+            onClick={() => setIsPRDModalOpen(true)}
+            disabled={!currentProject}
+            className="h-8 px-3 rounded-lg bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 text-[11px] text-purple-300 flex items-center gap-1 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500/50 active:scale-95 transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Generate Tasks from Project Docs</span>
+          </button>
+          <button 
             onClick={openAddModal}
+            disabled={!currentProject}
             className="h-8 px-3 rounded-lg bg-primary text-[11px] flex items-center gap-1 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95 transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Task</span>
-          </button>
-          <button
-            onClick={() => {
-              if (tasks.length > 0) {
-                setSelectedTask(tasks[0])
-                setIsEditModalOpen(true)
-              }
-            }}
-            disabled={tasks.length === 0}
-            className="h-8 px-3 rounded-lg bg-white/5 text-[11px] flex items-center gap-1 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95 transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span>Edit Task</span>
           </button>
         </div>
       </div>
@@ -147,6 +163,7 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
                     progress={getStatusProgress(task.status)}
                     priority={task.priority}
                     onEdit={() => handleEditTask(task)}
+                    onDelete={() => handleDeleteTask(task._id)}
                   />
                 ))}
               </div>
@@ -179,6 +196,12 @@ export const TaskManager = ({ searchQuery = '', activeTeam }: TaskManagerProps) 
           onSuccess={handleTaskEdited}
         />
       )}
+
+      <PRDParserModal
+        isOpen={isPRDModalOpen}
+        onClose={() => setIsPRDModalOpen(false)}
+        onSuccess={handlePRDImported}
+      />
     </div>
   )
 }
@@ -192,9 +215,10 @@ type TaskCardProps = {
   progress: number
   priority: 'Low' | 'Medium' | 'High'
   onEdit: () => void
+  onDelete: () => void
 }
 
-const TaskCard = ({ title, subtitle, team, description, time, progress, priority, onEdit }: TaskCardProps) => {
+const TaskCard = ({ title, subtitle, team, description, time, progress, priority, onEdit, onDelete }: TaskCardProps) => {
   const getPriorityColor = (p: 'Low' | 'Medium' | 'High') => {
     switch (p) {
       case 'High': return 'text-red-400'
@@ -210,15 +234,27 @@ const TaskCard = ({ title, subtitle, team, description, time, progress, priority
         <span>{time}</span>
         <div className="flex items-center gap-2">
           <span className={`font-medium ${getPriorityColor(priority)}`}>{priority}</span>
-          <button 
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit()
-            }}
-            className="opacity-0 group-hover:opacity-100 px-2 py-1 rounded bg-primary/20 hover:bg-primary/40 text-xs text-primary transition-all duration-200"
-          >
-            Edit
-          </button>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+             <button 
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit()
+              }}
+              className="px-2 py-1 rounded bg-primary/20 hover:bg-primary/40 text-xs text-primary transition-all duration-200"
+            >
+              Edit
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete()
+              }}
+              className="px-2 py-1 rounded bg-red-500/20 hover:bg-red-500/40 text-xs text-red-500 transition-all duration-200"
+              title="Delete Task"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
       <div className="text-[12px] font-semibold text-white truncate">{title}</div>

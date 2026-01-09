@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { projectService } from '../../services/api';
+import { projectService, getErrorMessage } from '../../services/api';
 import { useProject } from '../../context/ProjectContext'; // Ensure this path is correct
-import axios from 'axios';
 
 interface CreateProjectFormProps {
   onSuccess: () => void;
@@ -37,13 +36,7 @@ export const CreateProjectForm = ({ onSuccess, onCancel }: CreateProjectFormProp
 
     } catch (error: unknown) {
       console.error('Failed to create project:', error);
-      let errorMsg = 'Failed to create project';
-      if (axios.isAxiosError(error) && error.response?.data?.message) {
-        errorMsg = error.response.data.message;
-      } else if (error instanceof Error) {
-        errorMsg = error.message;
-      }
-      setError(errorMsg);
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

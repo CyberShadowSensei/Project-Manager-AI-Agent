@@ -66,4 +66,50 @@ ${extractedText}`;
     }
 });
 
+// DELETE /api/upload/:projectId/:assetId
+router.delete('/:projectId/:assetId', async (req, res) => {
+    const { projectId, assetId } = req.params;
+
+    try {
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        // Find the asset to get its name for context removal
+        const asset = project.assets?.find(a => a._id?.toString() === assetId);
+        if (!asset) {
+            return res.status(404).json({ message: 'Asset not found' });
+        }
+
+        // Remove from assets array
+        project.assets = project.assets?.filter(a => a._id?.toString() !== assetId);
+
+        // Remove from context using robust Regex
+        if (project.context) {
+            // Helper to escape regex special characters in filename
+            const escapeRegExp = (string: string) => {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            };
+
+            const safeName = escapeRegExp(asset.name);
+            // Regex explanation:
+            // 1. (\\n|\\r\\n)* : Optional leading newlines
+            // 2. --- Document: ${safeName} --- : The header
+            // 3. [\\s\\S]*? : Non-greedy match of ANY character (including newlines)
+            // 4. (?=(\\n|\\r\\n)*--- Document: |$) : Lookahead for the start of the next document OR end of string
+            const regex = new RegExp(`(\\n|\\r\\n)*--- Document: ${safeName} ---[\\s\\S]*?(?=(\\n|\\r\\n)*--- Document: |$)`, 'g');
+            
+            project.context = project.context.replace(regex, '').trim();
+        }
+
+        await project.save();
+        res.json({ message: 'Asset deleted and context updated', assets: project.assets });
+
+    } catch (error: any) {
+        console.error('Delete Asset Error:', error);
+        res.status(500).json({ message: 'Failed to delete asset', error: error.message });
+    }
+});
+
 export default router;

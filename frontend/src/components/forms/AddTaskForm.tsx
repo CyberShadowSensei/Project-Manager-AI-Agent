@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useProject } from '../../context/ProjectContext';
-import { taskService, type Task } from '../../services/api';
+import { taskService, type Task, getErrorMessage } from '../../services/api';
 import { StatusBadge, PriorityBadge } from '../ui/BadgeComponents';
-import axios from 'axios';
 
 interface AddTaskFormProps {
   tasks: Task[];
@@ -49,13 +48,7 @@ export const AddTaskForm = ({ tasks, onSuccess, onCancel }: AddTaskFormProps) =>
 
     } catch (err: unknown) {
       console.error('Failed to create task:', err);
-      let errorMessage = 'Failed to create task. Please try again.';
-      if (axios.isAxiosError(err) && err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-      setError(errorMessage);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

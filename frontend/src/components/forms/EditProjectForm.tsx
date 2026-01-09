@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { type Project } from '../../services/api';
-import axios from 'axios';
+import { type Project, getErrorMessage } from '../../services/api';
 
 interface EditProjectFormProps {
   project: Project;
@@ -28,13 +27,7 @@ export const EditProjectForm = ({ project, onSuccess, onCancel }: EditProjectFor
 
     } catch (error: unknown) {
       console.error('Failed to update project:', error);
-      let errorMsg = 'Failed to update project';
-      if (axios.isAxiosError(error) && error.response?.data?.message) {
-        errorMsg = error.response.data.message;
-      } else if (error instanceof Error) {
-        errorMsg = error.message;
-      }
-      setError(errorMsg);
+      setError(getErrorMessage(error));
 
     } finally {
       setLoading(false);

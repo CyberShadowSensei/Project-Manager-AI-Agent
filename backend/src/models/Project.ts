@@ -8,6 +8,7 @@ export interface IProject extends Document {
   // New fields for Context-Aware AI
   context?: string; // Aggregated text from uploaded files
   assets?: {
+    _id?: mongoose.Types.ObjectId;
     name: string;
     type: string;
     size: number;
