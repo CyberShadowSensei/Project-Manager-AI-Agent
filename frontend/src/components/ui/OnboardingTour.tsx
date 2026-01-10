@@ -53,18 +53,20 @@ export const OnboardingTour: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [pointerPos, setPointerPos] = useState({ top: 0, left: 0, opacity: 0 });
+  const [hasTriggered, setHasTriggered] = useState(false);
   const navigate = useNavigate();
   const { currentProject } = useProject();
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // Check if seen v7
+    // Only trigger once per application load when a project becomes active
     const hasSeenTour = localStorage.getItem('pm_ai_onboarding_v7');
-    if (!hasSeenTour && currentProject) {
+    if (!hasSeenTour && currentProject && !hasTriggered) {
+      setHasTriggered(true);
       const timer = setTimeout(() => setIsOpen(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, [currentProject]);
+  }, [currentProject, hasTriggered]);
 
   // Effect to navigate when step changes, skipping initial mount
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { User, Bell, Shield, Hash, ExternalLink, CheckCircle2, AlertCircle } from 'lucide-react'
+import { User, Bell, Shield, Hash, ExternalLink, CheckCircle2 } from 'lucide-react'
 import { inboxService } from '../services/api'
 
 export const SettingsPage = () => {
