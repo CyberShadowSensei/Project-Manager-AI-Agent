@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useProject } from '../context/ProjectContext'
-import { aiService, analyticsService, integrationService, type AIInsights, type Analytics } from '../services/api'
-import { AlertTriangle, Lightbulb, RefreshCw, Send, ShieldCheck, Activity, Target, TrendingUp, CheckCircle2 } from 'lucide-react'
+import { aiService, analyticsService, integrationService, projectService, type AIInsights, type Analytics } from '../services/api'
+import { AlertTriangle, Lightbulb, RefreshCw, Send, ShieldCheck, Activity, Target, TrendingUp, CheckCircle2, History, User } from 'lucide-react'
 
 export const ReportsPage = () => {
   const { currentProject, riskLevel, refreshRisk, markReportViewed } = useProject()
   const [insights, setInsights] = useState<AIInsights | null>(null)
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [sendingSlack, setSendingSlack] = useState(false)
 
@@ -19,12 +20,14 @@ export const ReportsPage = () => {
     if (!currentProject) return;
     setLoading(true)
     try {
-      const [insightsRes, analyticsRes] = await Promise.all([
+      const [insightsRes, analyticsRes, auditRes] = await Promise.all([
         aiService.getInsights(currentProject._id, force),
-        analyticsService.getProjectAnalytics(currentProject._id)
+        analyticsService.getProjectAnalytics(currentProject._id),
+        projectService.getAuditLogs(currentProject._id)
       ]);
       setInsights(insightsRes.data)
       setAnalytics(analyticsRes.data.analytics)
+      setAuditLogs(auditRes.data)
       await refreshRisk()
     } catch (error) {
       console.error('Failed to fetch report data:', error)
@@ -48,6 +51,7 @@ export const ReportsPage = () => {
             message: message
         });
         alert("Project Status Report shared to Slack!");
+        fetchData(); // Refresh audit logs
     } catch (err: any) {
         console.error(err);
         const errorMsg = err.response?.data?.message || "Failed to share report.";
@@ -77,7 +81,7 @@ export const ReportsPage = () => {
   };
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-500 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-8 animate-in fade-in duration-500 max-w-6xl mx-auto w-full pb-12">
       
       {/* Executive Summary Header */}
       <div className="flex flex-col md:flex-row gap-8 items-start justify-between bg-white/[0.02] border border-white/5 rounded-[2rem] p-8">
@@ -250,6 +254,49 @@ export const ReportsPage = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Audit Logs Section */}
+      <div className="space-y-6 mt-4">
+          <div className="flex items-center gap-2 text-slate-400">
+            <History className="w-5 h-5" />
+            <h3 className="font-bold uppercase tracking-widest text-xs text-muted">Activity Audit Trail</h3>
+          </div>
+          <div className="bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden">
+            <table className="w-full text-left text-xs">
+                <thead className="bg-white/5 text-muted border-b border-white/5">
+                    <tr>
+                        <th className="px-6 py-4 font-bold uppercase tracking-widest">Timestamp</th>
+                        <th className="px-6 py-4 font-bold uppercase tracking-widest">Entity</th>
+                        <th className="px-6 py-4 font-bold uppercase tracking-widest">Action</th>
+                        <th className="px-6 py-4 font-bold uppercase tracking-widest">Details</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                    {auditLogs.length === 0 ? (
+                        <tr>
+                            <td colSpan={4} className="px-6 py-8 text-center text-muted italic">No activity recorded for this project yet.</td>
+                        </tr>
+                    ) : (
+                        auditLogs.map((log, idx) => (
+                            <tr key={idx} className="hover:bg-white/[0.01] transition-colors">
+                                <td className="px-6 py-4 text-slate-500 font-mono">{new Date(log.timestamp).toLocaleString()}</td>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                                            <User className="w-3 h-3 text-primary" />
+                                        </div>
+                                        <span className="font-semibold text-white">{log.user}</span>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 font-bold text-indigo-400">{log.action}</td>
+                                <td className="px-6 py-4 text-slate-400 max-w-md truncate" title={log.details}>{log.details}</td>
+                            </tr>
+                        ))
+                    )}
+                </tbody>
+            </table>
+          </div>
       </div>
     </div>
   )

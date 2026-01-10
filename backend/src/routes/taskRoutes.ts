@@ -97,6 +97,15 @@ router.patch('/:id', async (req, res) => {
         ).populate('dependsOn', 'name status');
         
         if (!updatedTask) return res.status(404).json({ message: 'Task not found' });
+
+        if (updatedTask.project) {
+            const changes = [];
+            if (req.body.status) changes.push(`status to "${req.body.status}"`);
+            if (req.body.priority) changes.push(`priority to "${req.body.priority}"`);
+            const details = changes.length > 0 ? `Updated ${changes.join(' and ')}` : `Modified task details`;
+            await logActivity(updatedTask.project, 'Task Updated', `Task "${updatedTask.name}": ${details}`);
+        }
+
         res.json(updatedTask);
     } catch (error: any) {
         res.status(400).json({ message: error.message });

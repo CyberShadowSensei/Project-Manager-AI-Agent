@@ -82,7 +82,7 @@ Standard chatbots are isolated from the database. Our agent uses a **Dynamic Con
 ### 1. Document Ingestion ("Project Docs")
 *   **Upload:** Users drag-and-drop PRDs/Specs into the AI Hub.
 *   **Parsing:** `pdf-parse` extracts raw text, which is cleaned and appended to the Project's `context` field in MongoDB.
-*   **Optimization:** We strip whitespace and markdown noise to maximize the efficiency of the LLM's context window.
+*   **Non-Blocking Jobs:** Large documents are processed via an in-memory **Job Queue**. The system returns a `jobId` immediately, and the frontend polls for completion, ensuring the UI remains responsive.
 
 ### 2. Real-Time State Injection
 When a user asks, *"What should I do next?"*, the system does **not** just read the static documents.
@@ -90,6 +90,17 @@ When a user asks, *"What should I do next?"*, the system does **not** just read 
 *   **Step B:** It filters for `priority === 'High'` or `dueDate < NOW()`.
 *   **Step C:** These critical items are injected into a specialized `### CRITICAL ALERTS` section in the System Prompt.
 *   **Step D:** The AI is instructed to prioritize this dynamic data over static documents, allowing it to act as a real-time advisor.
+
+---
+
+## 📈 Intelligence Metrics: The Health Score
+
+We implemented a proprietary **Project Health Score** algorithm to provide executive-level visibility.
+
+*   **Baseline:** 100%
+*   **Deductions:** -15% for each Overdue Task, -10% for each Blocked Task.
+*   **Incentives:** +10% of the overall task completion percentage.
+*   **Visualization:** Displayed via a high-fidelity Radial Gauge in the Reports section.
 
 ---
 

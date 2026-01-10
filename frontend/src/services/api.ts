@@ -126,8 +126,9 @@ export const projectService = {
   getAll: () => api.get<Project[]>('/api/projects'),
   getById: (id: string) => api.get<Project>(`/api/projects/${id}`),
   create: (data: Omit<Project, '_id' | 'createdAt' | 'context' | 'assets'>) => api.post<Project>('/api/projects', data),
-  update: (id: string, data: Partial<Project>) => api.patch<Project>(`/api/projects/${id}`, data),
+  update: (id: string, data: Partial<Omit<Project, '_id' | 'createdAt'>>) => api.patch<Project>(`/api/projects/${id}`, data),
   remove: (id: string) => api.delete(`/api/projects/${id}`),
+  getAuditLogs: (id: string) => api.get<any[]>(`/api/projects/${id}/audit`),
   uploadFile: (projectId: string, file: File) => {
     const formData = new FormData();
     formData.append('file', file);

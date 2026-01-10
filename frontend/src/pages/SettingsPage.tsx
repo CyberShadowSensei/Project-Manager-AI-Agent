@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { User, Bell, Shield } from 'lucide-react'
+import { User, Bell, Shield, Hash, ExternalLink, CheckCircle2, AlertCircle } from 'lucide-react'
+import { inboxService } from '../services/api'
 
 export const SettingsPage = () => {
   // Lazy Initialization for local storage persistence
@@ -23,7 +24,23 @@ export const SettingsPage = () => {
     const savedProfilePicture = localStorage.getItem('profilePicture');
     return savedProfilePicture !== null ? savedProfilePicture : null;
   });
+  const [isSlackConnected, setIsSlackConnected] = useState(false);
+  const [checkingSlack, setCheckingSlack] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const checkSlack = async () => {
+        try {
+            const res = await inboxService.getMessages();
+            setIsSlackConnected(res.data.connected);
+        } catch (err) {
+            console.error("Slack check failed", err);
+        } finally {
+            setCheckingSlack(false);
+        }
+    };
+    checkSlack();
+  }, []);
 
 
 
@@ -115,7 +132,62 @@ export const SettingsPage = () => {
               </div>
             </div>
           </div>
-  
+
+          {/* Slack Integration */}
+          <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
+                  <Hash className="w-5 h-5 text-indigo-400" />
+                </div>
+                <div>
+                  <div className="text-[17px] font-semibold">Slack Integration</div>
+                  <div className="text-[11px] text-muted">Sync with your workspace</div>
+                </div>
+              </div>
+              
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                checkingSlack ? 'bg-white/5 text-muted animate-pulse' :
+                isSlackConnected ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+              }`}>
+                {checkingSlack ? 'Checking...' : isSlackConnected ? 'Connected' : 'Disconnected'}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-xs text-muted leading-relaxed">
+                Connect your workspace to enable real-time message syncing in your Inbox and push-to-Slack emergency alerts.
+              </p>
+              
+              {!isSlackConnected && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                  <div className="text-[10px] font-black uppercase text-primary tracking-widest">Setup Instructions</div>
+                  <ol className="text-[10px] text-muted list-decimal list-inside space-y-1">
+                    <li>Create an app at <span className="text-white italic">api.slack.com/apps</span></li>
+                    <li>Add <span className="text-white">chat:write</span> and <span className="text-white">channels:history</span> scopes</li>
+                    <li>Install the app and copy the Bot User OAuth Token</li>
+                    <li>Set <span className="text-white">SLACK_BOT_TOKEN</span> in your environment</li>
+                  </ol>
+                  <a 
+                    href="https://api.slack.com/apps" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline font-bold mt-1"
+                  >
+                    Slack API Dashboard <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
+
+              {isSlackConnected && (
+                <div className="flex items-center gap-2 text-[10px] text-green-400 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    System is correctly synchronized with your workspace.
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Notifications */}
           <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4">
             <div className="flex items-center gap-3 mb-4">
@@ -198,6 +270,7 @@ export const SettingsPage = () => {
                 localStorage.removeItem('pm_ai_onboarding_v4');
                 localStorage.removeItem('pm_ai_onboarding_v5');
                 localStorage.removeItem('pm_ai_onboarding_v6');
+                localStorage.removeItem('pm_ai_onboarding_v7');
                 alert('Onboarding tour reset! Refresh the page to see it again.');
               }}
               className="w-full px-4 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-xs font-bold uppercase tracking-widest hover:bg-primary/10 transition-all"

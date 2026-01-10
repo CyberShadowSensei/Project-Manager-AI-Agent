@@ -21,14 +21,14 @@ const steps: Step[] = [
   },
   {
     title: "AI Hub: Knowledge Base",
-    description: "This is the AI Hub. Click here to upload your project documents. It's the primary source of truth for the project brain.",
+    description: "Here in the AI Hub, you can upload project documents (PRDs, specs, notes). This gives the AI the context it needs to assist you.",
     icon: FileText,
     route: '/assets',
     targetId: 'tour-ai-hub'
   },
   {
     title: "Project Health & Intelligence",
-    description: "The Reports page calculates a real-time Health Score. Watch this metric to ensure your project stays on track.",
+    description: "The Reports page calculates a real-time Health Score and flags specific risk factors using AI analysis.",
     icon: Activity,
     route: '/reports',
     targetId: 'tour-reports'
@@ -58,8 +58,9 @@ export const OnboardingTour: React.FC = () => {
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // Permanent onboarding: Trigger every time a project is active
-    if (currentProject) {
+    // Check if seen v7
+    const hasSeenTour = localStorage.getItem('pm_ai_onboarding_v7');
+    if (!hasSeenTour && currentProject) {
       const timer = setTimeout(() => setIsOpen(true), 1000);
       return () => clearTimeout(timer);
     }
@@ -98,9 +99,9 @@ export const OnboardingTour: React.FC = () => {
     // Initial position
     updatePosition();
 
-    // Re-check after a small delay to account for page navigation/rendering
+    // Re-check after small delays to account for navigation/rendering
     const timer = setTimeout(updatePosition, 100);
-    const timer2 = setTimeout(updatePosition, 500);
+    const timer2 = setTimeout(updatePosition, 600);
 
     window.addEventListener('resize', updatePosition);
     return () => {
@@ -112,7 +113,7 @@ export const OnboardingTour: React.FC = () => {
 
   const handleClose = () => {
     setIsOpen(false);
-    // Removed localStorage.setItem to keep tour permanent
+    localStorage.setItem('pm_ai_onboarding_v7', 'true');
   };
 
   const handleNext = () => {
@@ -190,7 +191,7 @@ export const OnboardingTour: React.FC = () => {
             <h2 className="text-3xl font-bold text-white tracking-tight">
               {steps[currentStep].title}
             </h2>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-sm mx-auto">
+            <p className="text-slate-400 text-sm leading-relaxed max-sm mx-auto">
               {steps[currentStep].description}
             </p>
           </div>

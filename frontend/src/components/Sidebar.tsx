@@ -105,14 +105,13 @@ export const Sidebar = ({ activeView, onTeamChange, profilePicture }: SidebarPro
               <div className="relative">
                 <BarChart3 className="w-3.5 h-3.5" />
                 {riskLevel === 'High' && !hasViewedReport && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-[#0F111A]" />
                 )}
               </div>
             } 
             label="Reports" 
             to="/reports" 
             pathname={location.pathname} 
-            className={riskLevel === 'High' && !hasViewedReport ? 'animate-pulse-red border border-red-500/30 bg-red-500/5' : ''}
           />
         </div>
 
