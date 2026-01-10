@@ -3,7 +3,6 @@ import { useOutletContext } from 'react-router-dom'
 import { Search, Sparkles } from 'lucide-react'
 import { AnalyticsRow } from '../components/AnalyticsRow'
 import { BottomRow } from '../components/BottomRow'
-import { Header } from '../components/Header'
 import { PRDParserModal } from '../components/forms/PRDParserModal'
 import { useProject } from '../context/ProjectContext'
 
@@ -36,7 +35,6 @@ export const DashboardPage = () => {
 
   return (
     <div className="animate-[fadeIn_0.3s_ease-out] flex flex-col gap-6">
-      <Header pagePath="/dashboard" />
       <div className="">
         <div className="flex items-center gap-2">
           <input

@@ -160,7 +160,6 @@ export const AssetsPage = () => {
       <div className="flex-1 flex flex-col gap-6 overflow-y-auto">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[26px] leading-7 font-semibold mb-2">Project Intelligence</h1>
             <p className="text-muted text-sm">Upload documents to give the AI context about your project.</p>
           </div>
           <button 
