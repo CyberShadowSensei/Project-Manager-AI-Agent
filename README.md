@@ -1,95 +1,129 @@
 # PM AI Agent - Intelligence-Driven Project Management
 
-The PM AI Agent is an intelligence-driven project management assistant designed to automate planning, track execution health, and streamline team coordination. It leverages Retrieval-Augmented Generation (RAG) and real-time database state injection to provide situational awareness and actionable project insights.
+The PM AI Agent is a production-grade project management assistant designed to automate planning, track execution health, and streamline team coordination. It leverages Retrieval-Augmented Generation (RAG) and real-time database state injection to provide situational awareness and actionable project insights.
 
-![Status](https://img.shields.io/badge/Status-Feature%20Complete-green)
-![Stack](https://img.shields.io/badge/Stack-MERN%20%2B%20LangChain-blue)
+## Project Links
+*   Deployment URL: https://project-manager-ai-agent-green.vercel.app/
+*   Demo Video: [Link coming soon]
+
+## Status and Stack
+*   Project Status: Feature Complete (Hackathon Submission)
+*   Technical Stack: React 19, Node.js, MongoDB, LangChain.js, Groq Llama-3
+
+---
 
 ## Project Context
 
-This application was developed to solve core project management challenges: high manual planning overhead, siloed project documentation, and reactive risk management. Our agent acts as an autonomous intelligence layer that proactively monitors project health and automates the transition from documentation to execution.
+Developed to address the overhead of manual planning and reactive risk management, this agent acts as an autonomous intelligence layer. It proactively monitors project health and automates the transition from documentation to execution, ensuring that project managers can focus on strategic decisions rather than administrative chasing.
 
 ## Core Capabilities
 
 ### Artificial Intelligence
--   Contextual RAG Pipeline: Ingests project documents (PDF, TXT, MD) into a centralized AI Hub to provide document-specific intelligence.
--   Situational Awareness: Dynamic injection of real-time MongoDB state (priorities, deadlines, blockers) into the AI context for accurate advisory.
--   Automated Task Generation: Extraction of structured, actionable tasks directly from project documentation with dependency mapping.
--   Resilient Inference: Implements a Groq-on-Groq fallback strategy combined with a Circuit Breaker pattern to ensure high availability and consistent model behavior.
+-   Contextual RAG Pipeline: Centralized AI Hub for document ingestion (PDF, TXT, MD) providing project-specific intelligence.
+-   Situational Awareness: Dynamic injection of real-time MongoDB state (priorities, deadlines, blockers) into LLM context.
+-   Automated Task Generation: Extraction of structured execution plans from project documentation with dependency mapping.
+-   Onboarding Wizard: A dynamic, contextual walkthrough with programmatic element targeting for new users.
 
 ### Management and Analysis
--   Project Health Dashboard: Executive-level visibility via a percentage-based health score calculated from real-time risks and completion velocity.
--   Audit Trails: Comprehensive activity logging of critical project modifications for enterprise-grade accountability.
--   Unified Task Management: Global and project-specific views with multi-team filtering capabilities.
+-   Executive Health Dashboard: Percentage-based health score calculated via risk-weighted algorithms.
+-   Audit Trails: Comprehensive activity logging of critical project modifications for enterprise accountability.
+-   Unified Task Management: Multi-team filtering across global and project-specific views.
 
-### Platform Integration
--   Bi-directional Slack Integration: Push emergency status alerts to team channels and query project intelligence via Slack Slash Commands (/ai-status).
--   Smart Inbox: Centralized communication hub with real-time Slack synchronization and high-fidelity fallback demonstration modes.
+---
 
-## Architecture and Design
+## Architecture and Scalability
 
-The application utilizes a modular full-stack architecture optimized for low-latency AI interactions and horizontal scalability.
+The application utilizes a modular architecture designed for high availability and low-latency processing.
+
+### Detailed System Diagram
 
 ```mermaid
 graph TD
-    User["User Interface (React 19)"] -->|HTTPS/REST| API["Stateless API (Node.js)"]
-    API -->|Persistence| DB[("MongoDB Atlas")]
-    API -->|Orchestration| AIService["AI Service Layer (LangChain.js)"]
-    AIService -->|Primary| Groq1["Groq Llama-3 (Primary)"]
-    AIService -->|Fallback| Groq2["Groq Llama-3 (Secondary)"]
-    AIService -->|Notification| Slack["Slack Web API"]
+    subgraph Client_Layer
+        UI["React 19 Frontend (Vite)"]
+        Onboarding["Contextual Onboarding"]
+        HealthUI["Radial Health Gauge"]
+    end
+
+    subgraph API_Gateway
+        Express["Express.js Server"]
+        Auth["Stateless Auth Middleware"]
+        CacheL1["L1 Cache (In-Memory/TTL)"]
+    end
+
+    subgraph Intelligence_Pipeline
+        Orchestrator["LangChain.js Orchestrator"]
+        ContextManager["Dynamic Context Injector"]
+        Breaker["Circuit Breaker (Safety)"]
+        CacheL2["L2 Semantic Cache (Planned)"]
+    end
+
+    subgraph Async_Operations
+        Queue["In-Memory Job Queue"]
+        Worker["Background Process Worker"]
+    end
+
+    subgraph Persistence
+        DB[("MongoDB Atlas")]
+        ProjectDocs["Context Storage"]
+        AuditLogs["Audit Trail Store"]
+    end
+
+    subgraph Integration_Ecosystem
+        Groq1["Groq Primary Model"]
+        Groq2["Groq Fallback Model"]
+        Slack["Slack Webhook/Commands"]
+    end
+
+    %% Flow Definitions
+    UI -->|JSON/HTTPS| Express
+    Express --> CacheL1
+    CacheL1 -.->|Hit| UI
+    CacheL1 -.->|Miss| Orchestrator
+
+    Orchestrator --> ContextManager
+    ContextManager -->|Inject Task/Risk State| DB
+    ContextManager -->|Inject PRD Context| ProjectDocs
+
+    Orchestrator --> Breaker
+    Breaker --> Groq1
+    Groq1 -.->|Fail/Timeout| Groq2
+
+    Express --> Queue
+    Queue --> Worker
+    Worker --> Orchestrator
+    Worker --> AuditLogs
+
+    Orchestrator --> Slack
 ```
 
-### Engineering Decisions
--   LangChain.js Implementation: Utilized to unify the stack in TypeScript, ensuring end-to-end type safety and efficient handling of concurrent AI requests via the Node.js event loop.
--   Non-Blocking AI Architecture: Heavy document processing is handled via an asynchronous job queue with a frontend polling pattern to maintain UI responsiveness.
--   Performance Optimization: Integrated L1 Caching for AI analysis results to reduce latency and API consumption costs.
+### Scalability and Resilience Patterns
+
+1.  Non-Blocking AI Architecture
+The system employs an asynchronous job queue for heavy document processing. By decoupling LLM inference from the HTTP request-response cycle, the application maintains responsiveness. The frontend utilizes a polling pattern to retrieve results upon job completion.
+
+2.  Resilience Engineering (Circuit Breaker)
+To prevent cascading failures during AI provider outages, a Circuit Breaker pattern is implemented around LLM calls. If failure rates exceed defined thresholds, the system "trips" to protect core functionality and provides graceful fallbacks.
+
+3.  Multi-Layer Caching Strategy
+-   L1 Cache (API Response): Stores processed project intelligence and analytics with a 10-minute TTL to reduce redundant LLM calls.
+-   L2 Cache (Semantic): Designed to match semantically similar queries to further optimize API consumption and cost.
+
+4.  Horizontal Scalability
+The API is designed to be completely stateless. This allows for horizontal scaling across multiple instances behind a load balancer, supporting high-concurrency environments without session state synchronization issues.
+
+---
 
 ## Technical Stack
 
 -   Frontend: React 19, Vite, TypeScript, Tailwind CSS, Recharts, Lucide React.
 -   Backend: Node.js, Express, MongoDB (Mongoose).
 -   AI Infrastructure: LangChain.js, Groq Llama-3 inference models.
--   Tooling: PDF-Parse, Multer, Slack Web API.
+-   Integrations: Slack Web API, PDF-Parse, Multer.
 
-## Installation
+## Installation and Setup
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/CyberShadowSensei/Project-Manager-AI-Agent.git
-cd Project-Manager-AI-Agent
-```
-
-### 2. Backend Configuration
-```bash
-cd backend
-npm install
-```
-Create a .env file in the backend directory:
-```env
-PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-GROQ_API_KEY=your_primary_api_key
-GROQ_FALLBACK_KEY=your_secondary_api_key
-
-# Optional: Slack Configuration
-SLACK_BOT_TOKEN=your_slack_token
-SLACK_INBOX_CHANNEL=your_channel_id
-```
-Start the server:
-```bash
-npm start
-```
-
-### 3. Frontend Configuration
-```bash
-cd frontend
-npm install
-```
-Start the development environment:
-```bash
-npm run dev
-```
+Refer to the repository documentation for detailed environment configuration (`.env`) and local deployment instructions for both the backend and frontend modules.
 
 ## Team
 -   Divya Adhikari: Frontend Architecture and React Development.
