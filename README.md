@@ -29,24 +29,59 @@ The PM AI Agent is a professional project management assistant designed to autom
 
 ## Architecture and Design
 
-The system follows a modular full-stack design optimized for performance and reliability.
+The PM AI Agent acts as a central intelligence layer between raw project data and the project team. It is designed as an **Event-Driven Monolith**, optimized for low-latency AI interactions and modular scalability.
 
-### System Flow Diagram
+### System Architecture Diagram
 
 ```mermaid
-graph LR
-    UI[React 19 UI] --> API[Express API]
-    API <--> Cache[L1 Cache]
-    API <--> DB[(MongoDB Atlas)]
-    API --> Audit[Audit Trail]
+graph TD
+    subgraph Frontend_Client
+        UI["React 19 Dashboard (Vite)"]
+        WarRoom["Threat Analysis War Room"]
+        Assets["Project Docs (AI Hub)"]
+    end
+
+    subgraph API_Layer
+        API["Node.js / Express Server"]
+        Auth["Stateless Auth Middleware"]
+        Routes["REST Endpoints (/api/*)"]
+    end
+
+    subgraph Intelligence_Core
+        Orchestrator["AI Orchestrator (LangChain.js)"]
+        ContextEngine["Context Injection Engine"]
+        Safety["Groq-on-Groq Fallback Circuit"]
+    end
+
+    subgraph Data_Persistence
+        Mongo[(MongoDB Atlas)]
+        Files["Document Storage (Multer)"]
+    end
+
+    subgraph External_Ecosystem
+        GroqPrimary["Groq Llama-3 (Primary)"]
+        GroqSecondary["Groq Llama-3 (Fallback)"]
+        Slack["Slack Webhook API"]
+    end
+
+    %% Flows
+    UI -->|JSON/HTTPS| API
+    WarRoom -->|Emergency Trigger| API
+    Assets -->|Upload Stream| API
+
+    API --> Routes
+    Routes --> Orchestrator
+    Routes --> Mongo
+
+    Orchestrator --> ContextEngine
+    ContextEngine -->|Inject Real-Time DB State| GroqPrimary
     
-    API --> Queue[Job Queue]
-    Queue --> Worker[Job Worker]
-    Worker --> AIService[AI Orchestrator]
-    
-    AIService <--> Breaker[Circuit Breaker]
-    Breaker <--> LLM[Groq Llama-3]
-    AIService --> Slack[Slack Integration]
+    %% Resilience
+    GroqPrimary -.->|Timeout/Fail| Safety
+    Safety -->|Retry Request| GroqSecondary
+
+    %% Integrations
+    Orchestrator -->|Risk Detected| Slack
 ```
 
 ## Scalability
