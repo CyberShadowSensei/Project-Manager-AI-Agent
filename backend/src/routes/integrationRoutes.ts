@@ -63,13 +63,16 @@ router.post('/slack/alert', async (req, res) => {
         console.error('Slack Alert Error:', error);
         
         let userMessage = 'Failed to send Slack alert';
+        let technicalError = error.message;
+
         if (error.message?.includes('missing_scope')) {
-            userMessage = 'Failed to send Slack alert: The bot token is missing "chat:write" scope. Please add this permission in your Slack App settings.';
+            userMessage = 'PERMISSION ERROR: The Slack Bot Token is missing the "chat:write" scope.';
+            technicalError = 'Please go to api.slack.com, add "chat:write" to Bot Token Scopes, and REINSTALL the app to your workspace.';
         }
 
         res.status(500).json({ 
             message: userMessage, 
-            error: error.message,
+            error: technicalError,
             code: error.code || 'UNKNOWN_ERROR' 
         });
     }

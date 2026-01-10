@@ -48,9 +48,11 @@ export const ReportsPage = () => {
             message: message
         });
         alert("Project Status Report shared to Slack!");
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
-        alert("Failed to share report.");
+        const errorMsg = err.response?.data?.message || "Failed to share report.";
+        const techDetail = err.response?.data?.error ? `\n\nDetail: ${err.response.data.error}` : "";
+        alert(`${errorMsg}${techDetail}`);
     } finally {
         setSendingSlack(false);
     }
