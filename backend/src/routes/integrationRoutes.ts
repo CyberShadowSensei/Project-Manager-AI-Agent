@@ -149,7 +149,7 @@ router.post('/slack/command', async (req, res) => {
                                 text: "View Dashboard",
                                 emoji: true
                             },
-                            url: "https://project-manager-ai-agent-green.vercel.app/dashboard",
+                            url: "https://project-manager-ai-agent-xi.vercel.app/dashboard",
                             action_id: "button-action"
                         }
                     ]

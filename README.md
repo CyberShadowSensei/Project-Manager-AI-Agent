@@ -3,7 +3,7 @@
 The PM AI Agent is a professional project management assistant designed to automate planning, track execution health, and provide real-time situational awareness. It integrates advanced AI reasoning with project data to bridge the gap between documentation and delivery.
 
 ## Project Links
-*   Deployment URL: https://project-manager-ai-agent-green.vercel.app/
+*   Deployment URL: https://project-manager-ai-agent-xi.vercel.app/
 *   Demo Video: https://drive.google.com/file/d/1nsPLL1ZEoowwnFAY_cf-_Gup_zPI39Y7/view?usp=drivesdk
 
 ## Status and Stack
