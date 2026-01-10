@@ -4,7 +4,7 @@ The PM AI Agent is a professional project management assistant designed to autom
 
 ## Project Links
 *   Deployment URL: https://project-manager-ai-agent-green.vercel.app/
-*   Demo Video: [Link coming soon]
+*   Demo Video: https://drive.google.com/file/d/1nsPLL1ZEoowwnFAY_cf-_Gup_zPI39Y7/view?usp=drivesdk
 
 ## Status and Stack
 *   Project Status: Feature Complete
@@ -27,7 +27,7 @@ The PM AI Agent is a professional project management assistant designed to autom
 
 ---
 
-## Architecture
+## Architecture and Design
 
 The system follows a modular full-stack design optimized for performance and reliability.
 
@@ -35,20 +35,21 @@ The system follows a modular full-stack design optimized for performance and rel
 
 ```mermaid
 graph LR
-    UI[React 19 UI] --- API[Express API]
-    API --- DB[(MongoDB)]
-    API --- Cache[L1 Caching]
-    API --- Queue[Job Queue]
+    UI[React 19 UI] --> API[Express API]
+    API <--> Cache[L1 Cache]
+    API <--> DB[(MongoDB Atlas)]
+    API --> Audit[Audit Trail]
     
-    Queue --> Worker[Background Worker]
+    API --> Queue[Job Queue]
+    Queue --> Worker[Job Worker]
     Worker --> AIService[AI Orchestrator]
     
-    AIService --- Breaker[Circuit Breaker]
-    Breaker --- LLM[Groq Llama-3]
-    AIService --- Slack[Slack API]
+    AIService <--> Breaker[Circuit Breaker]
+    Breaker <--> LLM[Groq Llama-3]
+    AIService --> Slack[Slack Integration]
 ```
 
-### Engineering Excellence: Scalability and Resilience
+## Scalability
 
 The following design patterns were implemented to ensure the application is production-ready:
 
