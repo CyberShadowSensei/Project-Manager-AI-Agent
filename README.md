@@ -1,79 +1,58 @@
-# PM AI Agent - Smarter Project Management (Team: The NPCs)
+# PM AI Agent - Intelligence-Driven Project Management
 
-An AI-powered project management assistant designed to streamline planning, task tracking, and team coordination. This agent summarizes status, predicts risks via machine learning, supports natural language commands, and integrates with Slack.
+The PM AI Agent is an intelligence-driven project management assistant designed to automate planning, track execution health, and streamline team coordination. It leverages Retrieval-Augmented Generation (RAG) and real-time database state injection to provide situational awareness and actionable project insights.
 
 ![Status](https://img.shields.io/badge/Status-Feature%20Complete-green)
 ![Stack](https://img.shields.io/badge/Stack-MERN%20%2B%20LangChain-blue)
 
-## 🔗 Project Links
-*   **Deployment URL:** [https://project-manager-ai-agent-green.vercel.app/](https://project-manager-ai-agent-green.vercel.app/)
-*   **Demo Video:** [https://drive.google.com/file/d/1nsPLL1ZEoowwnFAY_cf-_Gup_zPI39Y7/view?usp=drivesdk]
+## Project Context
 
-## 📌 Problem Statement: PM AI Agent – Smarter Project Management
+This application was developed to solve core project management challenges: high manual planning overhead, siloed project documentation, and reactive risk management. Our agent acts as an autonomous intelligence layer that proactively monitors project health and automates the transition from documentation to execution.
 
-**Background:**
-Project Managers often struggle to keep track of deliverables, dependencies, and progress across distributed teams. An AI-powered PM Agent can assist in planning, task tracking, and team coordination using intelligent automation.
+## Core Capabilities
 
-**Our Task:**
-*   Create an AI agent that can summarize project status, generate daily stand-up updates, and track deadlines.
-*   Integrate with platforms like Jira, Trello, and Slack.
-*   Predict risks or delays using ML models.
-*   Enable natural language commands for quick queries and reporting.
+### Artificial Intelligence
+-   Contextual RAG Pipeline: Ingests project documents (PDF, TXT, MD) into a centralized AI Hub to provide document-specific intelligence.
+-   Situational Awareness: Dynamic injection of real-time MongoDB state (priorities, deadlines, blockers) into the AI context for accurate advisory.
+-   Automated Task Generation: Extraction of structured, actionable tasks directly from project documentation with dependency mapping.
+-   Resilient Inference: Implements a Groq-on-Groq fallback strategy combined with a Circuit Breaker pattern to ensure high availability and consistent model behavior.
 
----
+### Management and Analysis
+-   Project Health Dashboard: Executive-level visibility via a percentage-based health score calculated from real-time risks and completion velocity.
+-   Audit Trails: Comprehensive activity logging of critical project modifications for enterprise-grade accountability.
+-   Unified Task Management: Global and project-specific views with multi-team filtering capabilities.
 
-## 🚀 Key Features Implemented
+### Platform Integration
+-   Bi-directional Slack Integration: Push emergency status alerts to team channels and query project intelligence via Slack Slash Commands (/ai-status).
+-   Smart Inbox: Centralized communication hub with real-time Slack synchronization and high-fidelity fallback demonstration modes.
 
-### 🧠 AI Intelligence
-*   **Context-Aware Chat:** Upload PRDs, meeting notes, or specifications to the "AI Hub". The agent uses RAG (Retrieval-Augmented Generation) to answer questions based on your specific documents.
-*   **Chat Memory Buffer:** Remembers the last 10 interactions for natural, conversational follow-up questions.
-*   **Risk Prediction:** Automatically analyzes task dependencies and deadlines to flag "High Risk" items.
-*   **Smart Summaries:** Generates daily stand-up updates and project status reports on demand.
+## Architecture and Design
 
-### 📋 Task & Team Management
-*   **Global & Project Views:** Manage tasks across the entire organization or drill down into specific projects.
-*   **Team Workflows:** Filter tasks by teams (Marketing, Development, Design, Product, Operations).
-*   **Visual Dashboard:** Real-time charts for Status Overview, Completion Rate, and Risk Distribution.
-
-### 🔌 Integrations
-*   **Smart Slack Inbox:**
-    *   **Real Connection:** Add your Slack Bot Token to see live messages.
-    *   **Demo Mode:** If unconfigured, the system gracefully shows high-fidelity mock data for demonstration purposes.
-
----
-
-## 🏗️ Architecture
-
-The application follows a modular full-stack architecture for scalability and clear separation of concerns:
+The application utilizes a modular full-stack architecture optimized for low-latency AI interactions and horizontal scalability.
 
 ```mermaid
 graph TD
-    User["User (Browser)"] -->|HTTP/JSON| Frontend["React + Vite Frontend"]
-    Frontend -->|REST API| Backend["Node.js + Express Backend"]
-    Backend -->|Mongoose| DB[("MongoDB Atlas")]
-    Backend -->|LangChain| AIService["AI Service Layer"]
+    User["User Interface (React 19)"] -->|HTTPS/REST| API["Stateless API (Node.js)"]
+    API -->|Persistence| DB[("MongoDB Atlas")]
+    API -->|Orchestration| AIService["AI Service Layer (LangChain.js)"]
     AIService -->|Primary| Groq1["Groq Llama-3 (Primary)"]
-    AIService -->|Fallback| Groq2["Groq (Secondary Model)"]
+    AIService -->|Fallback| Groq2["Groq Llama-3 (Secondary)"]
+    AIService -->|Notification| Slack["Slack Web API"]
 ```
 
-### 💡 Why LangChain.js?
-We started with standard LangChain but pivoted to **LangChain.js** to unify our stack. This switch allowed us to keep our entire codebase in **TypeScript**, eliminating the need for a Python microservice and ensuring end-to-end type safety between our backend and AI logic. It integrates natively with Node.js's event loop, allowing us to handle concurrent AI requests and real-time data efficiently.
+### Engineering Decisions
+-   LangChain.js Implementation: Utilized to unify the stack in TypeScript, ensuring end-to-end type safety and efficient handling of concurrent AI requests via the Node.js event loop.
+-   Non-Blocking AI Architecture: Heavy document processing is handled via an asynchronous job queue with a frontend polling pattern to maintain UI responsiveness.
+-   Performance Optimization: Integrated L1 Caching for AI analysis results to reduce latency and API consumption costs.
 
-### 🛡️ Groq-on-Groq Fallback Strategy
-We intentionally avoided OpenAI for fallback. Our context-aware prompts are heavily fine-tuned for **Groq's Llama-3 models**. To ensure consistency, our fallback mechanism switches to a **different high-performance model within the Groq ecosystem**, guaranteeing that the AI's tone, formatting, and instruction-following remain stable even during primary model constraints. Sticking to a single service provider prevents the "prompt drift" that occurs when moving between different providers (e.g., Llama to GPT).
+## Technical Stack
 
----
+-   Frontend: React 19, Vite, TypeScript, Tailwind CSS, Recharts, Lucide React.
+-   Backend: Node.js, Express, MongoDB (Mongoose).
+-   AI Infrastructure: LangChain.js, Groq Llama-3 inference models.
+-   Tooling: PDF-Parse, Multer, Slack Web API.
 
-## 🛠️ Tech Stack
-
-*   **Frontend:** React (v19), Vite, TypeScript, Tailwind CSS, Recharts, Lucide Icons, @tailwindcss/typography.
-*   **Backend:** Node.js, Express, MongoDB (Mongoose).
-*   **AI Engine:** LangChain.js (Groq Llama-3-8b primary + Groq fallback).
-*   **Tools:** PDF-Parse, Multer, @slack/web-api.
-
----
-
-## 📦 Installation
+## Installation
 
 ### 1. Clone the Repository
 ```bash
@@ -81,62 +60,41 @@ git clone https://github.com/CyberShadowSensei/Project-Manager-AI-Agent.git
 cd Project-Manager-AI-Agent
 ```
 
-### 2. Backend Setup
+### 2. Backend Configuration
 ```bash
 cd backend
 npm install
 ```
-Create a `.env` file in the `backend` folder:
+Create a .env file in the backend directory:
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://your_connection_string
-GROQ_API_KEY=your_primary_groq_key
-GROQ_FALLBACK_KEY=your_secondary_groq_key
+MONGODB_URI=your_mongodb_connection_string
+GROQ_API_KEY=your_primary_api_key
+GROQ_FALLBACK_KEY=your_secondary_api_key
 
-# Optional: Real Slack Integration
-SLACK_BOT_TOKEN=xoxb-your-token
-SLACK_INBOX_CHANNEL=C12345678
+# Optional: Slack Configuration
+SLACK_BOT_TOKEN=your_slack_token
+SLACK_INBOX_CHANNEL=your_channel_id
 ```
-Start the backend:
+Start the server:
 ```bash
 npm start
 ```
 
-### 3. Frontend Setup
+### 3. Frontend Configuration
 ```bash
 cd frontend
 npm install
 ```
-Start the frontend:
+Start the development environment:
 ```bash
 npm run dev
 ```
 
----
+## Team
+-   Divya Adhikari: Frontend Architecture and React Development.
+-   Shriyukt Gupta: Backend Engineering, Database Design, and DevOps.
+-   Shubhanshi Negi: AI Logic, Prompt Engineering, and Integration.
 
-## 🧪 Usage Guide
-
-1.  **Create Tasks:** Use the "Add Task" button. You don't need a project; tasks can be global.
-2.  **Upload Context:** Go to **AI Hub** (sidebar) and drop a PDF/Text file (e.g., a PRD).
-3.  **Chat with AI:** Click the 💬 icon or use the inline chat in AI Hub. Ask: *"What are the risks in the uploaded PRD?"*
-4.  **Check Inbox:** Go to the dashboard. You will see "Demo Mode" messages unless you configured Slack.
-
----
-
-## 🔮 Future Goals
-
-*   **Advanced Workspace Management:** Implementation of multi-tenant environments for different teams.
-*   **Granular Activity Logging:** Comprehensive audit trails for project and task modifications.
-*   **Jira/Trello Integration:** Expand the "Smart Inbox" concept to include bi-directional sync with Jira boards.
-
----
-
-## 🤝 Team: The NPCs
-*   **Divya Adhikari:** Frontend UI/UX & React Components.
-*   **Shriyukt Gupta:** Backend API, Database Architecture & DevOps.
-*   **Shubhanshi Negi:** AI Logic, Prompt Engineering & LangChain Integration.
-
----
-
-## 📜 License
+## License
 MIT
