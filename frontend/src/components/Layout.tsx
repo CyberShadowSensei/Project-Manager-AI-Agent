@@ -8,16 +8,16 @@ import { OnboardingTour } from './ui/OnboardingTour'
 export const Layout = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  const { currentProject } = useProject()
+  const { currentProject, loadingProjects } = useProject()
   const [activeView, setActiveView] = useState('dashboard') // 'dashboard' or team name
   const [profilePicture, setProfilePicture] = useState<string | null>(null)
 
   useEffect(() => {
     // Protect layout routes - require an active project
-    if (!currentProject) {
+    if (!loadingProjects && !currentProject) {
       navigate('/projects');
     }
-  }, [currentProject, navigate]);
+  }, [currentProject, loadingProjects, navigate]);
 
   useEffect(() => {
     const savedProfilePicture = localStorage.getItem('profilePicture')

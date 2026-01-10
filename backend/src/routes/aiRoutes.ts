@@ -1,9 +1,18 @@
+import express from 'express';
+import multer from 'multer';
+import fs from 'fs';
+import { createRequire } from 'module';
+import { type IProject } from '../models/Project.js';
+import { type ITask } from '../models/Task.js';
 import { analyzeProject, chatOverProject, extractTasksFromText, type AnalyzeInput } from '../services/ai/analyzeProject.js'; // Person C's logic
 import Project from '../models/Project.js'; // Mongoose model for fetching
 import Task from '../models/Task.js'; // Mongoose model for fetching
 import ChatMessage from '../models/ChatMessage.js'; // Chat History Model
 import { aiCache } from '../services/cache.js';
 import { jobQueue } from '../services/jobQueue.js';
+
+const require = createRequire(import.meta.url);
+const pdf = require('pdf-parse');
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });

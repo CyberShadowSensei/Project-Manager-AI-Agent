@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Sparkles, FileText, CheckSquare, Activity, ShieldCheck } from 'lucide-react';
 
 interface Step {
   title: string;
   description: string;
   icon: React.ElementType;
+  route: string;
 }
 
 const steps: Step[] = [
@@ -12,32 +14,38 @@ const steps: Step[] = [
     title: "Welcome to PM AI Agent",
     description: "I am your intelligent project companion. I help you transform chaotic project documents into actionable plans and real-time insights.",
     icon: Sparkles,
+    route: '/welcome'
   },
   {
     title: "AI Hub: Your Knowledge Base",
     description: "Upload PRDs, specs, or meeting notes here. I ingest these documents to understand the full context of your project.",
     icon: FileText,
+    route: '/assets'
   },
   {
     title: "Automated Task Extraction",
-    description: "Save hours of planning. I can analyze your project docs and auto-generate structured tasks with priorities and team assignments.",
+    description: "Save hours of planning. Use the 'Generate Tasks' button on the Dashboard or Assets page to auto-create structured plans.",
     icon: CheckSquare,
+    route: '/dashboard'
   },
   {
     title: "Real-time Health Intelligence",
-    description: "Monitor your Project Health Score. I'll automatically flag risks and overdue items so you can focus on what matters most.",
+    description: "Monitor your Project Health Score here. I'll automatically flag risks and overdue items so you can focus on what matters most.",
     icon: Activity,
+    route: '/reports'
   },
   {
     title: "Ready to Lead?",
-    description: "You're all set. Select or create a project to begin your journey toward automated project management perfection.",
+    description: "You're all set. Create a project to begin your journey toward automated project management perfection.",
     icon: ShieldCheck,
+    route: '/projects'
   }
 ];
 
 export const OnboardingTour: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // We use a versioned key so you can force-reset it for all users if you update the tour later
@@ -47,6 +55,13 @@ export const OnboardingTour: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // Effect to navigate when step changes
+  useEffect(() => {
+    if (isOpen) {
+        navigate(steps[currentStep].route);
+    }
+  }, [currentStep, isOpen, navigate]);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -72,10 +87,14 @@ export const OnboardingTour: React.FC = () => {
   const CurrentIcon = steps[currentStep].icon;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-500">
-      <div className="w-full max-w-lg bg-[#0F111A]/90 border border-white/10 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 sm:p-8 pointer-events-none">
+      {/* Dark overlay with hole punch effect would require heavy lifting. 
+          Instead, we use a semi-transparent backdrop that lets you see the page context. */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-all duration-500" />
+
+      <div className="w-full max-w-lg bg-[#0F111A]/95 border border-white/10 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col relative animate-in slide-in-from-bottom-10 fade-in duration-500 pointer-events-auto">
         
-        {/* Progress Bar at the very top */}
+        {/* Progress Bar */}
         <div className="absolute top-0 left-0 w-full h-1.5 flex gap-1 px-6 pt-6">
           {steps.map((_, idx) => (
             <div 

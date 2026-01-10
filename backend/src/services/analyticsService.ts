@@ -5,6 +5,7 @@ export interface AnalyticsResult {
     totalTasks: number;
     completedTasks: number;
     completionPercentage: number;
+    healthScore: number; // New field: 0-100
     statusBreakdown: {
         todo: number;
         inProgress: number;
@@ -26,6 +27,7 @@ export const calculateProjectAnalytics = (project: IProject, tasks: ITask[]): An
             totalTasks: 0,
             completedTasks: 0,
             completionPercentage: 0,
+            healthScore: 100, // Empty project is "healthy"
             statusBreakdown: { todo: 0, inProgress: 0, done: 0 },
             priorityBreakdown: { low: 0, medium: 0, high: 0 },
             overdueCount: 0,
@@ -38,6 +40,7 @@ export const calculateProjectAnalytics = (project: IProject, tasks: ITask[]): An
         totalTasks,
         completedTasks: 0,
         completionPercentage: 0,
+        healthScore: 100,
         statusBreakdown: { todo: 0, inProgress: 0, done: 0 },
         priorityBreakdown: { low: 0, medium: 0, high: 0 },
         overdueCount: 0,
@@ -66,7 +69,6 @@ export const calculateProjectAnalytics = (project: IProject, tasks: ITask[]): An
         }
 
         // Blocked Check
-        // Task dependsOn is an ObjectId, we need to find the actual task object
         if (task.dependsOn) {
             const dependencyTask = tasks.find(t => t._id.toString() === task.dependsOn?.toString());
             if (dependencyTask && dependencyTask.status !== 'Done') {
@@ -76,6 +78,22 @@ export const calculateProjectAnalytics = (project: IProject, tasks: ITask[]): An
     });
 
     stats.completionPercentage = Math.round((stats.completedTasks / totalTasks) * 100);
+
+    // --- HEALTH SCORE CALCULATION ---
+    // Start at 100
+    let score = 100;
+    
+    // Deduct 15 points per overdue task (max 45)
+    score -= Math.min(stats.overdueCount * 15, 45);
+    
+    // Deduct 10 points per blocked task (max 30)
+    score -= Math.min(stats.blockedCount * 10, 30);
+    
+    // Bonus for progress: add 0.2 * completion percentage
+    score += (stats.completionPercentage * 0.1);
+
+    // Final clamp
+    stats.healthScore = Math.max(0, Math.min(100, Math.round(score)));
 
     return stats;
 };
