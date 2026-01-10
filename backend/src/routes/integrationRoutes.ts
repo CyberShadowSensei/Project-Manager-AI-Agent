@@ -9,24 +9,31 @@ const token = process.env.SLACK_BOT_TOKEN;
 const channel = process.env.SLACK_INBOX_CHANNEL;
 
 router.post('/slack/alert', async (req, res) => {
-    const { message, project, riskLevel } = req.body;
+    const { message, projectId, riskLevel } = req.body;
 
     if (!token || !channel) {
-        return res.status(400).json({ message: 'Slack is not configured.' });
+        return res.status(400).json({ message: 'Slack is not configured. Please set SLACK_BOT_TOKEN and SLACK_INBOX_CHANNEL.' });
     }
 
     const client = new WebClient(token);
 
     try {
+        // 1. Fetch project to ensure it exists and for logging
+        const projectDoc = await Project.findById(projectId);
+        if (!projectDoc) {
+            return res.status(404).json({ message: 'Project not found.' });
+        }
+
+        // 2. Send Slack Message
         await client.chat.postMessage({
             channel: channel,
-            text: `⚠️ *PROJECT RISK ALERT: ${project}*`,
+            text: `⚠️ *PROJECT RISK ALERT: ${projectDoc.name}*`,
             blocks: [
                 {
                     type: "section",
                     text: {
                         type: "mrkdwn",
-                        text: `🚨 *CRITICAL ALERT: ${project}*\n*Status:* ${riskLevel} Risk Detected\n\n${message}`
+                        text: `🚨 *CRITICAL ALERT: ${projectDoc.name}*\n*Status:* ${riskLevel} Risk Detected\n\n${message}`
                     }
                 },
                 {
@@ -44,16 +51,21 @@ router.post('/slack/alert', async (req, res) => {
             ]
         });
 
-        // Log to audit
-        const projectDoc = await Project.findOne({ name: project });
-        if (projectDoc) {
+        // 3. Log to audit (wrapped in try/catch to avoid failing the whole request)
+        try {
             await logActivity(projectDoc._id.toString(), 'Emergency Alert', `Project status shared to Slack with ${riskLevel} risk level.`);
+        } catch (auditErr) {
+            console.error('Audit Log Error:', auditErr);
         }
 
         res.json({ message: 'Slack alert sent successfully!' });
     } catch (error: any) {
         console.error('Slack Alert Error:', error);
-        res.status(500).json({ message: 'Failed to send Slack alert', error: error.message });
+        res.status(500).json({ 
+            message: 'Failed to send Slack alert', 
+            error: error.message,
+            code: error.code || 'UNKNOWN_ERROR' 
+        });
     }
 });
 

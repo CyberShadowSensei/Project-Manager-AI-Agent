@@ -43,7 +43,7 @@ export const ReportsPage = () => {
     try {
         const message = `*Project Health Summary*\nScore: ${analytics.healthScore}%\nStatus: ${riskLevel} Risk\n\n${insights.summary}`;
         await integrationService.sendSlackAlert({
-            project: currentProject.name,
+            projectId: currentProject._id,
             riskLevel: riskLevel,
             message: message
         });

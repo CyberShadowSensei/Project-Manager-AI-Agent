@@ -184,7 +184,7 @@ export const inboxService = {
 };
 
 export const integrationService = {
-  sendSlackAlert: (data: { message: string; project: string; riskLevel: string }) => 
+  sendSlackAlert: (data: { message: string; projectId: string; riskLevel: string }) => 
     api.post('/api/integrations/slack/alert', data),
 };
 
