@@ -2,6 +2,7 @@ import express from 'express';
 import Task, { type ITask } from '../models/Task.js';
 import Project from '../models/Project.js'; // Assuming Project might be needed for validation
 import { Types } from 'mongoose'; // Import Types for ObjectId
+import { logActivity } from '../services/auditService.js';
 
 const router = express.Router();
 
@@ -53,6 +54,11 @@ router.post('/', async (req, res) => {
         
         const newTask: ITask = new Task(taskData);
         const savedTask: ITask = await newTask.save();
+
+        if (savedTask.project) {
+            await logActivity(savedTask.project, 'Task Created', `New task "${savedTask.name}" assigned to ${savedTask.owner}`);
+        }
+
         res.status(201).json(savedTask);
     } catch (error: any) {
         res.status(400).json({ message: error.message });
@@ -102,6 +108,11 @@ router.delete('/:id', async (req, res) => {
     try {
         const deletedTask: ITask | null = await Task.findByIdAndDelete(req.params.id);
         if (!deletedTask) return res.status(404).json({ message: 'Task not found' });
+
+        if (deletedTask.project) {
+            await logActivity(deletedTask.project, 'Task Deleted', `Task "${deletedTask.name}" was removed from the project.`);
+        }
+
         res.json({ message: 'Task deleted' });
     } catch (error: any) {
         res.status(500).json({ message: error.message });

@@ -1,8 +1,19 @@
 import express from 'express';
 import Project, { type IProject } from '../models/Project.js';
 import Task, { type ITask } from '../models/Task.js'; // Assuming Task is needed for validation or cascading deletes
+import AuditLog from '../models/AuditLog.js';
 
 const router = express.Router();
+
+// GET audit logs for a project
+router.get('/:id/audit', async (req, res) => {
+    try {
+        const logs = await AuditLog.find({ project: req.params.id }).sort({ timestamp: -1 }).limit(50);
+        res.json(logs);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
 // GET all projects
 router.get('/', async (req, res) => {
