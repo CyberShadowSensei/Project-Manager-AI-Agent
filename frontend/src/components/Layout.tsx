@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { useProject } from '../context/ProjectContext'
+import { ChatWidget } from './ChatWidget'
 import { OnboardingTour } from './ui/OnboardingTour'
 
 export const Layout = () => {
@@ -11,6 +12,8 @@ export const Layout = () => {
   const { currentProject, loadingProjects } = useProject()
   const [activeView, setActiveView] = useState('dashboard') // 'dashboard' or team name
   const [profilePicture, setProfilePicture] = useState<string | null>(null)
+
+  const isAssetsPage = location.pathname === '/assets'
 
   useEffect(() => {
     // Protect layout routes - require an active project
@@ -49,9 +52,14 @@ export const Layout = () => {
       <div className="w-[240px] border-r border-white/5">
         <Sidebar activeView={activeView} onTeamChange={setActiveView} profilePicture={profilePicture} />
       </div>
-      <div className="flex-1 flex flex-col min-w-0 px-8 py-7 gap-6 overflow-auto">
+      <div className="flex-1 flex flex-col min-w-0 px-8 py-7 gap-6 overflow-auto relative">
         <Header pagePath={location.pathname} />
         <Outlet context={{ activeTeam }} />
+        
+        {/* Global Floating Chat Widget - Hidden on AssetsPage where it's inline */}
+        {currentProject && !isAssetsPage && (
+          <ChatWidget projectId={currentProject._id} />
+        )}
       </div>
     </div>
   )

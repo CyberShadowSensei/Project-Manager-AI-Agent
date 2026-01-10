@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Sparkles, FileText, CheckSquare, Activity, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ChevronRight, ChevronLeft, Sparkles, FileText, CheckSquare, Activity, ShieldCheck, X } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 
 interface Step {
@@ -49,73 +49,87 @@ const steps: Step[] = [
   }
 ];
 
+// Using a stable key that is cleared by the Reset button in SettingsPage
+const ONBOARDING_KEY = 'pm_ai_onboarding_v3';
+
 export const OnboardingTour: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
   const [pointerPos, setPointerPos] = useState({ top: 0, left: 0, opacity: 0 });
   const [hasTriggered, setHasTriggered] = useState(false);
+  
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentProject } = useProject();
-  const isFirstRender = useRef(true);
+  const requestRef = useRef<number>(null);
 
+  // 1. Trigger Logic
   useEffect(() => {
-    // Truly Permanent onboarding: Trigger every time a project becomes active after a page reload
-    if (currentProject && !hasTriggered) {
-      setHasTriggered(true);
-      const timer = setTimeout(() => setIsOpen(true), 1000);
+    // Only check if we haven't triggered in this session mount
+    if (!currentProject?._id || hasTriggered || isVisible) return;
+
+    const isCompleted = localStorage.getItem(ONBOARDING_KEY);
+    
+    if (!isCompleted) {
+      console.log(`[Onboarding] Conditions met for project ${currentProject.name}. Triggering in 2s...`);
+      
+      const timer = setTimeout(() => {
+        // Double check completion state right before opening
+        if (!localStorage.getItem(ONBOARDING_KEY)) {
+            console.log("[Onboarding] Opening tour now.");
+            setIsVisible(true);
+            setHasTriggered(true);
+        }
+      }, 2000);
+
       return () => clearTimeout(timer);
     }
-  }, [currentProject, hasTriggered]);
+  }, [currentProject?._id, hasTriggered, isVisible]);
 
-  // Effect to navigate when step changes, skipping initial mount
+  // 2. Navigation Logic: Sync step with route
   useEffect(() => {
-    if (isOpen) {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return;
-        }
-        navigate(steps[currentStep].route);
+    if (isVisible) {
+      const targetRoute = steps[currentStep].route;
+      if (location.pathname !== targetRoute) {
+        console.log(`[Onboarding] Step ${currentStep}: Navigating to ${targetRoute}`);
+        navigate(targetRoute);
+      }
     }
-  }, [currentStep, isOpen, navigate]);
+  }, [currentStep, isVisible, navigate, location.pathname]);
 
-  // Effect to update pointer position based on target element
+  // 3. Spotlight Tracking: High-frequency position sync
+  const updatePointer = useCallback(() => {
+    if (!isVisible) return;
+
+    const targetId = steps[currentStep].targetId;
+    const element = document.getElementById(targetId);
+
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      setPointerPos({
+        top: rect.top + rect.height / 2,
+        left: rect.left + rect.width / 2,
+        opacity: 1
+      });
+    } else {
+      // If target is missing (e.g. during navigation), hide spotlight
+      setPointerPos(prev => ({ ...prev, opacity: 0 }));
+    }
+
+    requestRef.current = requestAnimationFrame(updatePointer);
+  }, [currentStep, isVisible]);
+
   useEffect(() => {
-    if (!isOpen) return;
-
-    const updatePosition = () => {
-        const target = document.getElementById(steps[currentStep].targetId);
-        if (target) {
-            const rect = target.getBoundingClientRect();
-            // Center the dot on the element
-            setPointerPos({
-                top: rect.top + rect.height / 2,
-                left: rect.left + rect.width / 2,
-                opacity: 1
-            });
-        } else {
-            // If target not found yet, keep opacity 0 but don't reset coordinates to 0,0
-            // to avoid snapping from top-left
-            setPointerPos(prev => ({ ...prev, opacity: 0 }));
-        }
-    };
-
-    // Initial position
-    updatePosition();
-
-    // Re-check after small delays to account for navigation/rendering
-    const timer = setTimeout(updatePosition, 100);
-    const timer2 = setTimeout(updatePosition, 600);
-
-    window.addEventListener('resize', updatePosition);
+    requestRef.current = requestAnimationFrame(updatePointer);
     return () => {
-        window.removeEventListener('resize', updatePosition);
-        clearTimeout(timer);
-        clearTimeout(timer2);
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [currentStep, isOpen]);
+  }, [updatePointer]);
 
   const handleClose = () => {
-    setIsOpen(false);
+    console.log("[Onboarding] Tour closed/finished. Saving state.");
+    localStorage.setItem(ONBOARDING_KEY, 'true');
+    setIsVisible(false);
   };
 
   const handleNext = () => {
@@ -132,18 +146,18 @@ export const OnboardingTour: React.FC = () => {
     }
   };
 
-  if (!isOpen) return null;
+  if (!isVisible) return null;
 
   const CurrentIcon = steps[currentStep].icon;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 sm:p-8 pointer-events-none">
-      {/* Reduced darkness and removed blur to keep the background sharp */}
-      <div className="absolute inset-0 bg-black/20 transition-all duration-500" />
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 sm:p-8 pointer-events-none font-sans">
+      {/* Fully Transparent Overlay as requested */}
+      <div className="absolute inset-0 bg-transparent" />
 
-      {/* Dynamic Spotlight Pointer (Pulsing Dot with Smooth Transition) */}
+      {/* High-Fidelity Spotlight */}
       <div 
-        className="fixed transition-all duration-700 ease-in-out pointer-events-none z-[110]"
+        className="fixed transition-all duration-500 ease-out pointer-events-none z-[110]"
         style={{ 
             top: pointerPos.top, 
             left: pointerPos.left, 
@@ -151,60 +165,58 @@ export const OnboardingTour: React.FC = () => {
             transform: 'translate(-50%, -50%)' 
         }}
       >
-        {/* Pulsing Ring */}
-        <div className="absolute -top-4 -left-4 w-8 h-8 rounded-full border-2 border-primary animate-ping opacity-75" />
-        <div className="w-4 h-4 rounded-full bg-primary shadow-[0_0_25px_rgba(168,85,247,1)] border-2 border-white/20" />
+        <div className="absolute -top-6 -left-6 w-12 h-12 rounded-full border-2 border-primary animate-ping opacity-50" />
+        <div className="w-5 h-5 rounded-full bg-primary shadow-[0_0_30px_rgba(168,85,247,1)] border-2 border-white" />
       </div>
 
-      <div className="w-full max-w-lg bg-[#0F111A]/80 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col relative animate-in slide-in-from-bottom-10 fade-in duration-500 pointer-events-auto">
+      {/* Tour Card */}
+      <div className="w-full max-w-lg bg-[#0F111A]/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-[0_0_60px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col relative animate-in slide-in-from-bottom-12 fade-in duration-700 pointer-events-auto">
         
-        {/* Progress Bar */}
-        <div className="absolute top-0 left-0 w-full h-1.5 flex gap-1 px-6 pt-6">
+        {/* Progress Line */}
+        <div className="absolute top-0 left-0 w-full h-1 flex gap-0.5">
           {steps.map((_, idx) => (
             <div 
               key={idx}
-              className={`h-1 flex-1 rounded-full transition-all duration-500 ${
-                idx <= currentStep ? 'bg-primary shadow-[0_0_10px_rgba(168,85,247,0.5)]' : 'bg-white/10'
+              className={`h-full flex-1 transition-all duration-1000 ${
+                idx <= currentStep ? 'bg-primary shadow-[0_0_15px_rgba(168,85,247,0.8)]' : 'bg-white/5'
               }`}
             />
           ))}
         </div>
 
-        {/* Top Actions */}
-        <div className="flex justify-end p-6 pt-10">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 pb-0">
+          <div className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/80">
+            Guided Onboarding • Module {currentStep + 1}
+          </div>
           <button 
             onClick={handleClose}
-            className="text-[10px] font-bold uppercase tracking-widest text-muted hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/5"
+            className="p-2 rounded-full hover:bg-white/5 text-muted hover:text-white transition-all"
+            title="Skip Tour"
           >
-            Skip Tour
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Content Section */}
-        <div className="flex-1 px-10 pb-8 flex flex-col items-center text-center">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20 flex items-center justify-center mb-8 shadow-2xl">
-            <CurrentIcon className="w-10 h-10 text-primary animate-pulse" />
+        {/* Content */}
+        <div className="flex-1 px-10 py-8 flex flex-col items-center text-center">
+          <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary/30 to-secondary/30 border border-white/10 flex items-center justify-center mb-8 shadow-inner transform rotate-3">
+            <CurrentIcon className="w-12 h-12 text-white animate-pulse" />
           </div>
           
-          <div className="space-y-3 mb-10">
-            <div className="text-[10px] uppercase font-black tracking-[0.3em] text-primary/80">
-              Module {currentStep + 1} of {steps.length}
-            </div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">
-              {steps[currentStep].title}
-            </h2>
-            <p className="text-slate-400 text-sm leading-relaxed max-sm mx-auto">
-              {steps[currentStep].description}
-            </p>
-          </div>
+          <h2 className="text-3xl font-bold text-white tracking-tight mb-4">
+            {steps[currentStep].title}
+          </h2>
+          <p className="text-slate-400 text-base leading-relaxed max-w-sm">
+            {steps[currentStep].description}
+          </p>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-8 border-t border-white/5 bg-white/[0.02] flex items-center justify-between">
+        {/* Footer */}
+        <div className="p-8 pt-0 flex items-center justify-between">
           <button
             onClick={handlePrev}
-            disabled={currentStep === 0}
-            className={`flex items-center gap-2 text-sm font-semibold transition-all ${
+            className={`flex items-center gap-2 text-sm font-bold transition-all px-4 py-2 rounded-xl hover:bg-white/5 ${
               currentStep === 0 ? 'opacity-0 pointer-events-none' : 'text-muted hover:text-white'
             }`}
           >
@@ -214,12 +226,12 @@ export const OnboardingTour: React.FC = () => {
           
           <button
             onClick={handleNext}
-            className="group relative px-8 py-3 rounded-2xl bg-primary text-white font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/25 overflow-hidden"
+            className="group relative px-10 py-4 rounded-2xl bg-primary text-white font-black uppercase text-xs tracking-widest transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(168,85,247,0.4)] overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
             <span className="relative flex items-center gap-2">
-              {currentStep === steps.length - 1 ? "Start Managing" : "Continue"}
-              {currentStep < steps.length - 1 && <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />}
+              {currentStep === steps.length - 1 ? "Finish" : "Next Module"}
+              {currentStep < steps.length - 1 && <ChevronRight className="w-4 h-4" />}
             </span>
           </button>
         </div>
