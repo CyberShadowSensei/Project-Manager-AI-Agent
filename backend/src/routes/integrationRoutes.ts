@@ -61,8 +61,14 @@ router.post('/slack/alert', async (req, res) => {
         res.json({ message: 'Slack alert sent successfully!' });
     } catch (error: any) {
         console.error('Slack Alert Error:', error);
+        
+        let userMessage = 'Failed to send Slack alert';
+        if (error.message?.includes('missing_scope')) {
+            userMessage = 'Failed to send Slack alert: The bot token is missing "chat:write" scope. Please add this permission in your Slack App settings.';
+        }
+
         res.status(500).json({ 
-            message: 'Failed to send Slack alert', 
+            message: userMessage, 
             error: error.message,
             code: error.code || 'UNKNOWN_ERROR' 
         });

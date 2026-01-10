@@ -82,9 +82,9 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
             </div>
           </div>
         </div>
-        <div className="flex-1 flex items-center justify-end">
+        <div className="flex-1 flex items-center justify-end min-w-0">
           <div className="w-[130px] h-[130px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={130}>
               <PieChart>
                 <Pie
                   data={displayDonutData}
@@ -127,8 +127,8 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
             </div>
           </div>
         </div>
-        <div className="flex-1 relative min-h-[80px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="flex-1 relative min-h-[80px] min-w-0">
+          <ResponsiveContainer width="100%" height="100%" minHeight={80}>
             <LineChart data={waveformData} margin={{ top: 10, bottom: 0, left: 0, right: 0 }}>
               <XAxis dataKey="x" hide />
               <Tooltip content={() => null} />
@@ -157,8 +157,8 @@ export const AnalyticsRow = ({ activeTeam }: AnalyticsRowProps) => {
             <div className="text-[17px] font-semibold">Risk Distribution</div>
           </div>
         </div>
-        <div className="flex-1 h-full min-h-[100px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="flex-1 h-full min-h-[100px] min-w-0">
+          <ResponsiveContainer width="100%" height="100%" minHeight={100}>
             <BarChart 
               data={[
                 { name: 'High', count: analytics?.priorityBreakdown.high || 0 },
