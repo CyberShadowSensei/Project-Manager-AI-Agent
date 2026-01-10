@@ -60,7 +60,8 @@ export const OnboardingTour: React.FC = () => {
 
   useEffect(() => {
     // Truly Permanent onboarding: Trigger every time a project becomes active in a new session
-    if (currentProject && !hasTriggered) {
+    const hasSeenTour = localStorage.getItem('pm_ai_onboarding_v8');
+    if (!hasSeenTour && currentProject && !hasTriggered) {
       setHasTriggered(true);
       const timer = setTimeout(() => setIsOpen(true), 1000);
       return () => clearTimeout(timer);
@@ -93,6 +94,8 @@ export const OnboardingTour: React.FC = () => {
                 opacity: 1
             });
         } else {
+            // If target not found yet, keep opacity 0 but don't reset coordinates to 0,0
+            // to avoid snapping from top-left
             setPointerPos(prev => ({ ...prev, opacity: 0 }));
         }
     };
@@ -114,6 +117,7 @@ export const OnboardingTour: React.FC = () => {
 
   const handleClose = () => {
     setIsOpen(false);
+    localStorage.setItem('pm_ai_onboarding_v8', 'true');
   };
 
   const handleNext = () => {
