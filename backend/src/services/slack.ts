@@ -33,8 +33,12 @@ export async function fetchInboxMessages(limit = 20) {
       text: m.text,
       ts: m.ts,
     }));
-  } catch (error) {
-    console.error("Error fetching Slack history:", error);
+  } catch (error: any) {
+    if (error.code === 'slack_webapi_platform_error' && error.data?.error === 'channel_not_found') {
+        console.warn(`[Slack] Channel ${channel} not found or Bot not invited. Falling back to Demo Mode.`);
+    } else {
+        console.error("Error fetching Slack history:", error.message || error);
+    }
     return [];
   }
 }

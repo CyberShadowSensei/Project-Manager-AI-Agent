@@ -167,6 +167,7 @@ export const SettingsPage = () => {
                     <li>Add <span className="text-white">chat:write</span> and <span className="text-white">channels:history</span> scopes</li>
                     <li>Install the app and copy the Bot User OAuth Token</li>
                     <li>Set <span className="text-white">SLACK_BOT_TOKEN</span> in your environment</li>
+                    <li><span className="text-primary font-bold uppercase">Crucial:</span> Type <span className="text-white italic">/invite @your_bot_name</span> in your Slack channel</li>
                   </ol>
                   <a 
                     href="https://api.slack.com/apps" 
