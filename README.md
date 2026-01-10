@@ -1,116 +1,68 @@
 # PM AI Agent - Intelligence-Driven Project Management
 
-The PM AI Agent is a production-grade project management assistant designed to automate planning, track execution health, and streamline team coordination. It leverages Retrieval-Augmented Generation (RAG) and real-time database state injection to provide situational awareness and actionable project insights.
+The PM AI Agent is a professional project management assistant designed to automate planning, track execution health, and provide real-time situational awareness. It integrates advanced AI reasoning with project data to bridge the gap between documentation and delivery.
 
 ## Project Links
 *   Deployment URL: https://project-manager-ai-agent-green.vercel.app/
 *   Demo Video: [Link coming soon]
 
 ## Status and Stack
-*   Project Status: Feature Complete (Hackathon Submission)
+*   Project Status: Feature Complete
 *   Technical Stack: React 19, Node.js, MongoDB, LangChain.js, Groq Llama-3
 
 ---
 
-## Project Context
+## Feature Overview
 
-Developed to address the overhead of manual planning and reactive risk management, this agent acts as an autonomous intelligence layer. It proactively monitors project health and automates the transition from documentation to execution, ensuring that project managers can focus on strategic decisions rather than administrative chasing.
+### AI and Intelligence
+-   Context-Aware RAG: Ingests documents (PDF, TXT, MD) into a central hub for specific project intelligence.
+-   Situational Awareness: Dynamic injection of real-time database state (overdue tasks and blockers) into the AI prompt.
+-   Automated Task Generator: Extracts structured plans from project documentation with full dependency mapping.
+-   Contextual Onboarding: Interactive walkthrough that navigates the user through the platform features.
 
-## Core Capabilities
-
-### Artificial Intelligence
--   Contextual RAG Pipeline: Centralized AI Hub for document ingestion (PDF, TXT, MD) providing project-specific intelligence.
--   Situational Awareness: Dynamic injection of real-time MongoDB state (priorities, deadlines, blockers) into LLM context.
--   Automated Task Generation: Extraction of structured execution plans from project documentation with dependency mapping.
--   Onboarding Wizard: A dynamic, contextual walkthrough with programmatic element targeting for new users.
-
-### Management and Analysis
--   Executive Health Dashboard: Percentage-based health score calculated via risk-weighted algorithms.
--   Audit Trails: Comprehensive activity logging of critical project modifications for enterprise accountability.
--   Unified Task Management: Multi-team filtering across global and project-specific views.
+### Analysis and Reporting
+-   Health Dashboard: A data-driven score calculated from real-time risks and completion velocity.
+-   Audit Trails: Persistent logging of critical project actions for enterprise-grade accountability.
+-   Smart Integration: Bi-directional Slack intelligence via status alerts and slash commands (/ai-status).
 
 ---
 
-## Architecture and Scalability
+## Architecture
 
-The application utilizes a modular architecture designed for high availability and low-latency processing.
+The system follows a modular full-stack design optimized for performance and reliability.
 
-### Detailed System Diagram
+### System Flow Diagram
 
 ```mermaid
-graph TD
-    subgraph Client_Layer
-        UI["React 19 Frontend (Vite)"]
-        Onboarding["Contextual Onboarding"]
-        HealthUI["Radial Health Gauge"]
-    end
-
-    subgraph API_Gateway
-        Express["Express.js Server"]
-        Auth["Stateless Auth Middleware"]
-        CacheL1["L1 Cache (In-Memory/TTL)"]
-    end
-
-    subgraph Intelligence_Pipeline
-        Orchestrator["LangChain.js Orchestrator"]
-        ContextManager["Dynamic Context Injector"]
-        Breaker["Circuit Breaker (Safety)"]
-        CacheL2["L2 Semantic Cache (Planned)"]
-    end
-
-    subgraph Async_Operations
-        Queue["In-Memory Job Queue"]
-        Worker["Background Process Worker"]
-    end
-
-    subgraph Persistence
-        DB[("MongoDB Atlas")]
-        ProjectDocs["Context Storage"]
-        AuditLogs["Audit Trail Store"]
-    end
-
-    subgraph Integration_Ecosystem
-        Groq1["Groq Primary Model"]
-        Groq2["Groq Fallback Model"]
-        Slack["Slack Webhook/Commands"]
-    end
-
-    %% Flow Definitions
-    UI -->|JSON/HTTPS| Express
-    Express --> CacheL1
-    CacheL1 -.->|Hit| UI
-    CacheL1 -.->|Miss| Orchestrator
-
-    Orchestrator --> ContextManager
-    ContextManager -->|Inject Task/Risk State| DB
-    ContextManager -->|Inject PRD Context| ProjectDocs
-
-    Orchestrator --> Breaker
-    Breaker --> Groq1
-    Groq1 -.->|Fail/Timeout| Groq2
-
-    Express --> Queue
-    Queue --> Worker
-    Worker --> Orchestrator
-    Worker --> AuditLogs
-
-    Orchestrator --> Slack
+graph LR
+    UI[React 19 UI] --- API[Express API]
+    API --- DB[(MongoDB)]
+    API --- Cache[L1 Caching]
+    API --- Queue[Job Queue]
+    
+    Queue --> Worker[Background Worker]
+    Worker --> AIService[AI Orchestrator]
+    
+    AIService --- Breaker[Circuit Breaker]
+    Breaker --- LLM[Groq Llama-3]
+    AIService --- Slack[Slack API]
 ```
 
-### Scalability and Resilience Patterns
+### Engineering Excellence: Scalability and Resilience
 
-1.  Non-Blocking AI Architecture
-The system employs an asynchronous job queue for heavy document processing. By decoupling LLM inference from the HTTP request-response cycle, the application maintains responsiveness. The frontend utilizes a polling pattern to retrieve results upon job completion.
+The following design patterns were implemented to ensure the application is production-ready:
 
-2.  Resilience Engineering (Circuit Breaker)
-To prevent cascading failures during AI provider outages, a Circuit Breaker pattern is implemented around LLM calls. If failure rates exceed defined thresholds, the system "trips" to protect core functionality and provides graceful fallbacks.
+1.  Non-Blocking Operations
+Heavy document analysis is handled via an asynchronous job queue. This ensures the user interface remains responsive while the AI processes large datasets in the background.
 
-3.  Multi-Layer Caching Strategy
--   L1 Cache (API Response): Stores processed project intelligence and analytics with a 10-minute TTL to reduce redundant LLM calls.
--   L2 Cache (Semantic): Designed to match semantically similar queries to further optimize API consumption and cost.
+2.  Fault Tolerance (Circuit Breaker)
+To protect the system from external API outages, a Circuit Breaker pattern wraps all AI calls. It automatically trips after repeated failures to provide graceful fallbacks and prevent system hangs.
 
-4.  Horizontal Scalability
-The API is designed to be completely stateless. This allows for horizontal scaling across multiple instances behind a load balancer, supporting high-concurrency environments without session state synchronization issues.
+3.  Multi-Layer Performance
+The system utilizes a 10-minute L1 TTL cache for project intelligence and is architected for L2 semantic caching, significantly reducing latency and API costs.
+
+4.  Stateless Scalability
+The API layer is completely stateless, allowing for immediate horizontal scaling across multiple instances behind a load balancer.
 
 ---
 
@@ -118,17 +70,16 @@ The API is designed to be completely stateless. This allows for horizontal scali
 
 -   Frontend: React 19, Vite, TypeScript, Tailwind CSS, Recharts, Lucide React.
 -   Backend: Node.js, Express, MongoDB (Mongoose).
--   AI Infrastructure: LangChain.js, Groq Llama-3 inference models.
--   Integrations: Slack Web API, PDF-Parse, Multer.
+-   Infrastructure: LangChain.js, Groq Llama-3, PDF-Parse, Multer.
 
-## Installation and Setup
+## Installation
 
-Refer to the repository documentation for detailed environment configuration (`.env`) and local deployment instructions for both the backend and frontend modules.
+Consult the repository source for environment configuration (.env) and deployment guides for both the backend and frontend modules.
 
 ## Team
 -   Divya Adhikari: Frontend Architecture and React Development.
--   Shriyukt Gupta: Backend Engineering, Database Design, and DevOps.
--   Shubhanshi Negi: AI Logic, Prompt Engineering, and Integration.
+-   Shriyukt Gupta: Backend Engineering and Database Design.
+-   Shubhanshi Negi: AI Logic and Prompt Engineering.
 
 ## License
 MIT
