@@ -66,10 +66,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const projectsArray = response.data || [];
       setProjects(projectsArray);
       
-      // If no project is currently selected, default to the first one
-      if (!currentProject && projectsArray.length > 0) {
-        setCurrentProject(projectsArray[0]);
-      } else if (projectsArray.length === 0) {
+      // Removed auto-selection logic to allow explicit project selection 
+      // and prevent navigation conflicts.
+      if (projectsArray.length === 0) {
         setCurrentProject(null);
       }
     } catch (error) {
@@ -79,7 +78,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     } finally {
       setLoadingProjects(false);
     }
-  }, []);
+  }, []); // Removed currentProject dependency
 
   const triggerTaskRefresh = () => {
     setTaskRefreshTrigger(prev => prev + 1);

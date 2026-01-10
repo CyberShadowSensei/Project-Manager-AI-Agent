@@ -46,6 +46,7 @@ export const OnboardingTour: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
+  const isFirstRender = React.useRef(true);
 
   useEffect(() => {
     // We use a versioned key so you can force-reset it for all users if you update the tour later
@@ -56,9 +57,13 @@ export const OnboardingTour: React.FC = () => {
     }
   }, []);
 
-  // Effect to navigate when step changes
+  // Effect to navigate when step changes, but skip the very first mount
   useEffect(() => {
     if (isOpen) {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
         navigate(steps[currentStep].route);
     }
   }, [currentStep, isOpen, navigate]);
