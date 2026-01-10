@@ -59,9 +59,8 @@ export const OnboardingTour: React.FC = () => {
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // Truly Permanent onboarding: Trigger every time a project becomes active in a new session
-    const hasSeenTour = localStorage.getItem('pm_ai_onboarding_v8');
-    if (!hasSeenTour && currentProject && !hasTriggered) {
+    // Truly Permanent onboarding: Trigger every time a project becomes active after a page reload
+    if (currentProject && !hasTriggered) {
       setHasTriggered(true);
       const timer = setTimeout(() => setIsOpen(true), 1000);
       return () => clearTimeout(timer);
@@ -117,7 +116,6 @@ export const OnboardingTour: React.FC = () => {
 
   const handleClose = () => {
     setIsOpen(false);
-    localStorage.setItem('pm_ai_onboarding_v8', 'true');
   };
 
   const handleNext = () => {
