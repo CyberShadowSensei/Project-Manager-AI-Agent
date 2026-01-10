@@ -1,49 +1,56 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useProject } from '../context/ProjectContext'
-import { aiService, integrationService, type AIInsights } from '../services/api'
-import { AlertTriangle, Lightbulb, RefreshCw, Radio, Send, Zap, ShieldAlert, CheckCircle2 } from 'lucide-react'
+import { aiService, analyticsService, integrationService, type AIInsights, type Analytics } from '../services/api'
+import { AlertTriangle, Lightbulb, RefreshCw, Send, ShieldCheck, Activity, Target, TrendingUp, CheckCircle2 } from 'lucide-react'
 
 export const ReportsPage = () => {
-  const { currentProject, riskLevel, refreshRisk } = useProject()
+  const { currentProject, riskLevel, refreshRisk, markReportViewed } = useProject()
   const [insights, setInsights] = useState<AIInsights | null>(null)
+  const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(false)
   const [sendingSlack, setSendingSlack] = useState(false)
 
-  const fetchInsights = useCallback(async (force = false) => {
-    if (!currentProject) {
-      setInsights(null);
-      return;
-    }
+  // Mark report as viewed when mounting this page
+  useEffect(() => {
+    markReportViewed();
+  }, [markReportViewed]);
+
+  const fetchData = useCallback(async (force = false) => {
+    if (!currentProject) return;
     setLoading(true)
     try {
-      const response = await aiService.getInsights(currentProject._id, force)
-      setInsights(response.data)
-      await refreshRisk() // Sync global risk level
+      const [insightsRes, analyticsRes] = await Promise.all([
+        aiService.getInsights(currentProject._id, force),
+        analyticsService.getProjectAnalytics(currentProject._id)
+      ]);
+      setInsights(insightsRes.data)
+      setAnalytics(analyticsRes.data.analytics)
+      await refreshRisk()
     } catch (error) {
-      console.error('Failed to fetch AI insights:', error)
-      setInsights(null);
+      console.error('Failed to fetch report data:', error)
     } finally {
       setLoading(false)
     }
   }, [currentProject, refreshRisk]);
 
   useEffect(() => {
-    fetchInsights()
-  }, [currentProject, fetchInsights])
+    fetchData()
+  }, [currentProject, fetchData])
 
-  const handleSlackAlert = async () => {
-    if (!currentProject || !insights) return;
+  const handleSlackShare = async () => {
+    if (!currentProject || !insights || !analytics) return;
     setSendingSlack(true);
     try {
+        const message = `*Project Health Summary*\nScore: ${analytics.healthScore}%\nStatus: ${riskLevel} Risk\n\n${insights.summary}`;
         await integrationService.sendSlackAlert({
             project: currentProject.name,
             riskLevel: riskLevel,
-            message: insights.summary
+            message: message
         });
-        alert("Emergency Alert Blasted to Slack!");
+        alert("Project Status Report shared to Slack!");
     } catch (err) {
         console.error(err);
-        alert("Failed to send Slack alert. Check your configuration.");
+        alert("Failed to share report.");
     } finally {
         setSendingSlack(false);
     }
@@ -53,132 +60,157 @@ export const ReportsPage = () => {
     return (
         <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-4">
-                <ShieldAlert className="w-16 h-16 text-muted mx-auto opacity-20" />
-                <p className="text-muted italic">Select a project to activate the War Room.</p>
+                <ShieldCheck className="w-16 h-16 text-muted mx-auto opacity-20" />
+                <p className="text-muted italic">Select a project to generate intelligence reports.</p>
             </div>
         </div>
     )
   }
 
-  const getRiskColor = (level: string) => {
-    switch (level) {
-      case 'High': return 'text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
-      case 'Medium': return 'text-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.3)]'
-      case 'Low': return 'text-green-500'
-      default: return 'text-muted'
-    }
-  }
+  const score = analytics?.healthScore ?? 0;
+  const getScoreColor = (s: number) => {
+    if (s >= 80) return 'text-green-500';
+    if (s >= 50) return 'text-yellow-500';
+    return 'text-red-500';
+  };
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-500">
-      {/* Top Section: Radar & Emergency Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-slate-900/50 border border-white/10 p-8 flex flex-col md:flex-row items-center gap-12">
-        {/* The Radar UI */}
-        <div className="relative w-48 h-48 flex-shrink-0">
-            {/* Outer rings */}
-            <div className="absolute inset-0 rounded-full border border-indigo-500/20" />
-            <div className="absolute inset-4 rounded-full border border-indigo-500/10" />
-            <div className="absolute inset-12 rounded-full border border-indigo-500/5" />
-            
-            {/* The Beam */}
-            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,rgba(99,102,241,0.2)_90deg,transparent_100deg)] animate-[spin_4s_linear_infinite]" />
-            
-            {/* Center Point */}
-            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${riskLevel === 'High' ? 'bg-red-500 animate-pulse' : 'bg-indigo-500'}`} />
-            
-            {/* Grid Lines */}
-            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-indigo-500/10" />
-            <div className="absolute left-1/2 top-0 w-[1px] h-full bg-indigo-500/10" />
-
-            {/* Scanning Label */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-slate-900 border border-indigo-500/30 text-[8px] uppercase tracking-widest text-indigo-400 font-bold whitespace-nowrap">
-                {loading ? 'Scanning Context...' : 'System Active'}
+    <div className="flex flex-col gap-8 animate-in fade-in duration-500 max-w-6xl mx-auto w-full">
+      
+      {/* Executive Summary Header */}
+      <div className="flex flex-col md:flex-row gap-8 items-start justify-between bg-white/[0.02] border border-white/5 rounded-[2rem] p-8">
+        
+        {/* Health Gauge */}
+        <div className="relative flex-shrink-0 w-40 h-40 flex items-center justify-center group">
+            <svg className="w-full h-full transform -rotate-90">
+                <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    className="text-white/5"
+                />
+                <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray={440}
+                    strokeDashoffset={440 - (440 * score) / 100}
+                    strokeLinecap="round"
+                    className={`transition-all duration-1000 ease-out ${getScoreColor(score)}`}
+                />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className={`text-4xl font-black tracking-tighter ${getScoreColor(score)}`}>{score}%</span>
+                <span className="text-[10px] uppercase font-bold text-muted tracking-widest">Health Score</span>
             </div>
         </div>
 
         <div className="flex-1 space-y-4">
-            <div className="flex items-center gap-3">
-                <Radio className={`w-5 h-5 ${riskLevel === 'High' ? 'text-red-500 animate-pulse' : 'text-indigo-400'}`} />
-                <h2 className="text-2xl font-bold tracking-tight uppercase">AI Threat Analysis</h2>
-            </div>
-            
-            <div className="flex flex-wrap gap-4">
-                <div className={`px-4 py-3 rounded-2xl bg-white/5 border border-white/10 flex flex-col gap-1 min-w-[140px] ${getRiskColor(riskLevel)}`}>
-                    <span className="text-[10px] uppercase font-bold text-muted opacity-70">Threat Level</span>
-                    <span className="text-lg font-black tracking-widest">{riskLevel.toUpperCase()}</span>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-muted">
+                    <Activity className="w-3 h-3 text-primary" />
+                    Project Status: {riskLevel} Risk
                 </div>
-                <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 flex flex-col gap-1 min-w-[140px]">
-                    <span className="text-[10px] uppercase font-bold text-muted opacity-70">Active Hazards</span>
-                    <span className="text-lg font-black text-white">{(insights?.deadlines?.overdue?.length || 0) + (insights?.deadlines?.dueSoon?.length || 0)}</span>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={handleSlackShare}
+                        disabled={sendingSlack || !insights}
+                        className="h-9 px-4 rounded-xl bg-white text-black text-[11px] font-bold uppercase tracking-wider hover:bg-opacity-90 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                    >
+                        <Send className="w-3.5 h-3.5" />
+                        Share Status Report
+                    </button>
+                    <button 
+                        onClick={() => fetchData(true)}
+                        disabled={loading}
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50"
+                        title="Refresh Report"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
                 </div>
             </div>
 
-            <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
-                {insights?.summary || "Initializing deep scan of project parameters, task dependencies, and documentation context..."}
+            <h2 className="text-2xl font-semibold tracking-tight">Executive Intelligence Summary</h2>
+            <p className="text-sm text-slate-400 leading-relaxed italic">
+                "{insights?.summary || "Compiling project metrics and AI context for an updated status summary..."}"
             </p>
 
-            <div className="flex gap-3 pt-2">
-                <button 
-                    onClick={handleSlackAlert}
-                    disabled={sendingSlack || !insights}
-                    className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg shadow-red-600/20 active:scale-95 disabled:opacity-50"
-                >
-                    <Send className="w-3.5 h-3.5" />
-                    Blast Alert to Slack
-                </button>
-                <button 
-                    onClick={() => fetchInsights(true)}
-                    disabled={loading}
-                    className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-                >
-                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh Scan
-                </button>
+            <div className="grid grid-cols-3 gap-4 pt-2">
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5">
+                    <Target className="w-4 h-4 text-indigo-400" />
+                    <div>
+                        <div className="text-[10px] text-muted uppercase font-bold">Velocity</div>
+                        <div className="text-sm font-semibold">{analytics?.completionPercentage || 0}%</div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5">
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                    <div>
+                        <div className="text-[10px] text-muted uppercase font-bold">Total Tasks</div>
+                        <div className="text-sm font-semibold">{analytics?.totalTasks || 0}</div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5">
+                    <AlertTriangle className="w-4 h-4 text-amber-400" />
+                    <div>
+                        <div className="text-[10px] text-muted uppercase font-bold">Blockers</div>
+                        <div className="text-sm font-semibold">{analytics?.blockedCount || 0}</div>
+                    </div>
+                </div>
             </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Identified Hazards Section */}
+        
+        {/* Risk Factors Section */}
         <div className="space-y-6">
-          <div className="flex items-center gap-2 text-red-400">
-            <ShieldAlert className="w-5 h-5" />
-            <h3 className="font-bold uppercase tracking-widest text-xs">Identified Hazards</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black uppercase tracking-widest text-muted flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500" />
+                Primary Risk Factors
+            </h3>
           </div>
           
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {loading ? (
-              <div className="p-12 text-center text-muted animate-pulse italic border border-white/5 rounded-3xl">Analyzing hazards...</div>
+              <div className="p-12 text-center text-muted animate-pulse italic border border-white/5 rounded-3xl">Analyzing risks...</div>
             ) : (insights?.deadlines?.overdue || []).length === 0 && (insights?.deadlines?.dueSoon || []).length === 0 ? (
-              <div className="p-12 text-center text-green-400 font-medium border border-dashed border-green-500/20 bg-green-500/5 rounded-3xl flex flex-col items-center gap-3">
+              <div className="p-12 text-center text-green-500 font-medium border border-dashed border-green-500/20 bg-green-500/5 rounded-[2rem] flex flex-col items-center gap-3">
                 <CheckCircle2 className="w-8 h-8" />
-                <span>No Critical Threats Detected</span>
+                <span className="text-sm uppercase tracking-wider font-bold">Project Integrity Secured</span>
               </div>
             ) : (
               <>
                 {(insights?.deadlines?.overdue || []).map((item, idx) => (
-                  <div key={idx} className="rounded-3xl bg-red-500/5 border border-red-500/20 p-6 space-y-3 relative overflow-hidden group hover:bg-red-500/10 transition-colors">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/10 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2" />
-                    <div className="flex items-center justify-between relative z-10">
-                      <div className="font-bold text-red-400 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4" />
-                        CRITICAL: {item.title}
-                      </div>
-                      <span className="px-3 py-1 rounded-lg text-[9px] font-black bg-red-500 text-white uppercase">Overdue</span>
+                  <div key={idx} className="group p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-red-500/30 transition-all">
+                    <div className="flex items-start justify-between mb-2">
+                        <span className="text-xs font-bold text-red-400 uppercase tracking-tight flex items-center gap-1.5">
+                            Critical Blocker
+                        </span>
+                        <span className="text-[9px] px-2 py-0.5 rounded bg-red-500/10 text-red-500 font-bold uppercase">Overdue</span>
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed relative z-10">This task is currently blocking project flow. Immediate team intervention required to prevent schedule slippage.</p>
+                    <div className="text-sm font-semibold text-white mb-1">{item.title}</div>
+                    <div className="text-xs text-muted leading-relaxed">System has flagged this task as a high-impact delay. Intervention required.</div>
                   </div>
                 ))}
                 {(insights?.deadlines?.dueSoon || []).map((item, idx) => (
-                  <div key={idx} className="rounded-3xl bg-yellow-500/5 border border-yellow-500/20 p-6 space-y-3 hover:bg-yellow-500/10 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="font-bold text-yellow-500 flex items-center gap-2">
-                        <Radio className="w-4 h-4" />
-                        WARNING: {item.title}
-                      </div>
-                      <span className="px-3 py-1 rounded-lg text-[9px] font-black bg-yellow-500 text-black uppercase">Due Soon</span>
+                  <div key={idx} className="group p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-yellow-500/30 transition-all">
+                    <div className="flex items-start justify-between mb-2">
+                        <span className="text-xs font-bold text-yellow-500 uppercase tracking-tight flex items-center gap-1.5">
+                            Performance Warning
+                        </span>
+                        <span className="text-[9px] px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-500 font-bold uppercase">Incoming</span>
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed">Incoming deadline. Ensure assignee is notified and capacity is verified.</p>
+                    <div className="text-sm font-semibold text-white mb-1">{item.title}</div>
+                    <div className="text-xs text-muted leading-relaxed">Task deadline within 72-hour window. Verify resource availability.</div>
                   </div>
                 ))}
               </>
@@ -186,33 +218,31 @@ export const ReportsPage = () => {
           </div>
         </div>
 
-        {/* Countermeasures Section */}
+        {/* Action Plan Section */}
         <div className="space-y-6">
-          <div className="flex items-center gap-2 text-indigo-400">
-            <Zap className="w-5 h-5" />
-            <h3 className="font-bold uppercase tracking-widest text-xs">AI Countermeasures</h3>
-          </div>
+          <h3 className="text-xs font-black uppercase tracking-widest text-muted flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-primary" />
+            Strategic Action Plan
+          </h3>
           
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {loading ? (
-              <div className="p-12 text-center text-muted animate-pulse italic border border-white/5 rounded-3xl">Calculating countermeasures...</div>
+              <div className="p-12 text-center text-muted animate-pulse italic border border-white/5 rounded-3xl">Calculating strategy...</div>
             ) : (insights?.suggestedActions || []).length === 0 ? (
-              <div className="p-12 text-center text-muted italic border border-dashed border-white/10 rounded-3xl">
-                Scan complete. No specific actions required at this time.
+              <div className="p-12 text-center text-muted italic border border-dashed border-white/10 rounded-[2rem]">
+                No immediate corrective actions recommended.
               </div>
             ) : (
               (insights?.suggestedActions || []).map((rec, idx) => (
-                <div key={idx} className="rounded-3xl bg-indigo-500/5 border border-indigo-500/20 p-6 space-y-3 hover:bg-indigo-500/10 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="font-bold text-white flex items-center gap-2">
-                        <Lightbulb className="w-4 h-4 text-indigo-400" />
-                        {rec.action}
-                    </div>
+                <div key={idx} className="p-5 rounded-2xl bg-indigo-500/[0.03] border border-indigo-500/10 hover:border-indigo-500/30 transition-all">
+                  <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase mb-2">
+                    Action {idx + 1}
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">{rec.reason}</p>
-                  <button className="text-[10px] text-indigo-400 font-bold hover:text-indigo-300 uppercase tracking-widest flex items-center gap-1 transition-colors">
-                    Implement Strategy <Radio className="w-3 h-3" />
-                  </button>
+                  <div className="text-sm font-semibold text-white mb-1">{rec.action}</div>
+                  <p className="text-xs text-muted leading-relaxed mb-3">{rec.reason}</p>
+                  <div className="flex items-center gap-1.5 text-[9px] font-bold text-indigo-400 uppercase tracking-widest cursor-pointer hover:text-indigo-300">
+                    Acknowledge Strategy <Activity className="w-2.5 h-2.5" />
+                  </div>
                 </div>
               ))
             )}

@@ -63,6 +63,7 @@ export interface Analytics {
     totalTasks: number;
     completedTasks: number;
     completionPercentage: number;
+    healthScore: number;
     statusBreakdown: {
         todo: number;
         inProgress: number;

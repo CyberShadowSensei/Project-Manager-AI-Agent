@@ -14,7 +14,7 @@ type SidebarProps = {
 
 export const Sidebar = ({ activeView, onTeamChange, profilePicture }: SidebarProps) => {
   const { pathname } = useLocation()
-  const { projects, currentProject, setCurrentProject, loadingProjects, refreshProjects, riskLevel } = useProject()
+  const { projects, currentProject, setCurrentProject, loadingProjects, refreshProjects, riskLevel, hasViewedReport } = useProject()
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
   const [isProjectListOpen, setIsProjectListOpen] = useState(false)
 
@@ -103,7 +103,7 @@ export const Sidebar = ({ activeView, onTeamChange, profilePicture }: SidebarPro
             icon={
               <div className="relative">
                 <BarChart3 className="w-3.5 h-3.5" />
-                {riskLevel === 'High' && (
+                {riskLevel === 'High' && !hasViewedReport && (
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
                 )}
               </div>
@@ -111,7 +111,7 @@ export const Sidebar = ({ activeView, onTeamChange, profilePicture }: SidebarPro
             label="Reports" 
             to="/reports" 
             pathname={location.pathname} 
-            className={riskLevel === 'High' ? 'animate-pulse-red border border-red-500/30 bg-red-500/5' : ''}
+            className={riskLevel === 'High' && !hasViewedReport ? 'animate-pulse-red border border-red-500/30 bg-red-500/5' : ''}
           />
         </div>
 

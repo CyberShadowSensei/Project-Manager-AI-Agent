@@ -16,6 +16,8 @@ interface ProjectContextType {
   triggerTaskRefresh: () => void;
   riskLevel: 'Low' | 'Medium' | 'High' | 'none';
   refreshRisk: () => Promise<void>;
+  hasViewedReport: boolean;
+  markReportViewed: () => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -26,6 +28,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [taskRefreshTrigger, setTaskRefreshTrigger] = useState(0);
   const [riskLevel, setRiskLevel] = useState<'Low' | 'Medium' | 'High' | 'none'>('none');
+  const [hasViewedReport, setHasViewedReport] = useState(true);
+
+  const markReportViewed = () => setHasViewedReport(true);
 
   const refreshRisk = useCallback(async () => {
     if (!currentProject) {
@@ -35,11 +40,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       const { aiService } = await import('../services/api');
       const response = await aiService.getInsights(currentProject._id);
-      setRiskLevel(response.data.riskLevel || 'Low');
+      const newLevel = response.data.riskLevel || 'Low';
+      
+      // If risk escalates to High, reset the viewed status so the user gets alerted again
+      if (newLevel === 'High' && riskLevel !== 'High') {
+        setHasViewedReport(false);
+      }
+      
+      setRiskLevel(newLevel);
     } catch (err) {
       console.error("Failed to fetch risk level", err);
     }
-  }, [currentProject]);
+  }, [currentProject, riskLevel]); // depend on riskLevel to detect change
 
   useEffect(() => {
     if (currentProject) {
@@ -109,7 +121,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [refreshProjects]);
 
   return (
-    <ProjectContext.Provider value={{ projects, currentProject, setCurrentProject, addProject, updateProject, deleteProject, loadingProjects, refreshProjects, taskRefreshTrigger, triggerTaskRefresh, riskLevel, refreshRisk }}>
+    <ProjectContext.Provider value={{ projects, currentProject, setCurrentProject, addProject, updateProject, deleteProject, loadingProjects, refreshProjects, taskRefreshTrigger, triggerTaskRefresh, riskLevel, refreshRisk, hasViewedReport, markReportViewed }}>
       {children}
     </ProjectContext.Provider>
   );
