@@ -52,15 +52,14 @@ const steps: Step[] = [
 export const OnboardingTour: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [pointerPos, setPointerPos] = useState({ top: 0, left: 0, opacity: 0 });
+  const [pointerPos, _setPointerPos] = useState({ top: 0, left: 0, opacity: 0 });
   const navigate = useNavigate();
   const { currentProject } = useProject();
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // We use a versioned key so you can force-reset it for all users if you update the tour later
-    const hasSeenTour = localStorage.getItem('pm_ai_onboarding_v6');
-    if (!hasSeenTour && currentProject) {
+    // Permanent onboarding: Trigger every time a project is active
+    if (currentProject) {
       const timer = setTimeout(() => setIsOpen(true), 1000);
       return () => clearTimeout(timer);
     }
@@ -77,43 +76,9 @@ export const OnboardingTour: React.FC = () => {
     }
   }, [currentStep, isOpen, navigate]);
 
-  // Effect to update pointer position based on target element
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const updatePosition = () => {
-        const target = document.getElementById(steps[currentStep].targetId);
-        if (target) {
-            const rect = target.getBoundingClientRect();
-            // Center the dot on the element
-            setPointerPos({
-                top: rect.top + rect.height / 2,
-                left: rect.left + rect.width / 2,
-                opacity: 1
-            });
-        } else {
-            setPointerPos(prev => ({ ...prev, opacity: 0 }));
-        }
-    };
-
-    // Initial position
-    updatePosition();
-
-    // Re-check after a small delay to account for page navigation/rendering
-    const timer = setTimeout(updatePosition, 100);
-    const timer2 = setTimeout(updatePosition, 500);
-
-    window.addEventListener('resize', updatePosition);
-    return () => {
-        window.removeEventListener('resize', updatePosition);
-        clearTimeout(timer);
-        clearTimeout(timer2);
-    };
-  }, [currentStep, isOpen]);
-
   const handleClose = () => {
     setIsOpen(false);
-    localStorage.setItem('pm_ai_onboarding_v6', 'true');
+    // Removed localStorage.setItem to keep tour permanent
   };
 
   const handleNext = () => {

@@ -77,6 +77,17 @@ The API layer is completely stateless, allowing for immediate horizontal scaling
 
 Consult the repository source for environment configuration (.env) and deployment guides for both the backend and frontend modules.
 
+## Future Goals
+
+### 1. Robust Authentication Implementation
+The current prototype uses a session-based approach for project management. Future versions will integrate centralized Authentication (e.g., Clerk or Supabase) to address:
+*   Data Isolation: Ensuring project data and sensitive documents are only accessible to authorized team members.
+*   User-Specific Context: Persisting individual preferences and dismissing onboarding tours per-user rather than per-browser.
+*   Multi-Tenant Workspaces: Supporting separate organizational environments within a single deployment.
+
+### 2. Bi-directional Integration Sync
+Expansion of Slack and Jira integrations to support bi-directional data flow, allowing tasks created in external platforms to reflect instantly in the PM AI Dashboard.
+
 ## Team
 -   Divya Adhikari: Frontend Architecture and React Development.
 -   Shriyukt Gupta: Backend Engineering and Database Design.
