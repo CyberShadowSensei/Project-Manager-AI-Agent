@@ -1,63 +1,72 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Sparkles, FileText, CheckSquare, Activity, ShieldCheck } from 'lucide-react';
+import { useProject } from '../../context/ProjectContext';
 
 interface Step {
   title: string;
   description: string;
   icon: React.ElementType;
   route: string;
+  targetId: string;
 }
 
 const steps: Step[] = [
   {
-    title: "Welcome to PM AI Agent",
-    description: "I am your intelligent project companion. I help you transform chaotic project documents into actionable plans and real-time insights.",
+    title: "Project Command Center",
+    description: "This is your Dashboard. It provides a high-level summary of your project health and recent activity.",
     icon: Sparkles,
-    route: '/welcome'
+    route: '/dashboard',
+    targetId: 'tour-dashboard'
   },
   {
-    title: "AI Hub: Your Knowledge Base",
-    description: "Upload PRDs, specs, or meeting notes here. I ingest these documents to understand the full context of your project.",
+    title: "AI Hub: Knowledge Base",
+    description: "This is the AI Hub. Click here to upload your project documents. It's the primary source of truth for the project brain.",
     icon: FileText,
-    route: '/assets'
+    route: '/assets',
+    targetId: 'tour-ai-hub'
   },
   {
-    title: "Automated Task Extraction",
-    description: "Save hours of planning. Use the 'Generate Tasks' button on the Dashboard or Assets page to auto-create structured plans.",
-    icon: CheckSquare,
-    route: '/dashboard'
-  },
-  {
-    title: "Real-time Health Intelligence",
-    description: "Monitor your Project Health Score here. I'll automatically flag risks and overdue items so you can focus on what matters most.",
+    title: "Project Health & Intelligence",
+    description: "The Reports page calculates a real-time Health Score. Watch this metric to ensure your project stays on track.",
     icon: Activity,
-    route: '/reports'
+    route: '/reports',
+    targetId: 'tour-reports'
   },
   {
-    title: "Ready to Lead?",
-    description: "You're all set. Create a project to begin your journey toward automated project management perfection.",
+    title: "Comprehensive Task Manager",
+    description: "Manage your execution plan here. You can filter by team, track status, and even auto-generate tasks from your docs.",
+    icon: CheckSquare,
+    route: '/tasks',
+    targetId: 'tour-tasks'
+  },
+  {
+    title: "Ready to Execute",
+    description: "You've seen the core tools. Use the AI Assistant 💬 in the corner anytime you need advice or a status update.",
     icon: ShieldCheck,
-    route: '/projects'
+    route: '/dashboard',
+    targetId: 'tour-chat'
   }
 ];
 
 export const OnboardingTour: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [pointerPos, setPointerPos] = useState({ top: 0, left: 0, opacity: 0 });
   const navigate = useNavigate();
-  const isFirstRender = React.useRef(true);
+  const { currentProject } = useProject();
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     // We use a versioned key so you can force-reset it for all users if you update the tour later
-    const hasSeenTour = localStorage.getItem('pm_ai_onboarding_v1');
-    if (!hasSeenTour) {
-      const timer = setTimeout(() => setIsOpen(true), 800);
+    const hasSeenTour = localStorage.getItem('pm_ai_onboarding_v6');
+    if (!hasSeenTour && currentProject) {
+      const timer = setTimeout(() => setIsOpen(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [currentProject]);
 
-  // Effect to navigate when step changes, but skip the very first mount
+  // Effect to navigate when step changes, skipping initial mount
   useEffect(() => {
     if (isOpen) {
         if (isFirstRender.current) {
@@ -68,9 +77,43 @@ export const OnboardingTour: React.FC = () => {
     }
   }, [currentStep, isOpen, navigate]);
 
+  // Effect to update pointer position based on target element
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+        const target = document.getElementById(steps[currentStep].targetId);
+        if (target) {
+            const rect = target.getBoundingClientRect();
+            // Center the dot on the element
+            setPointerPos({
+                top: rect.top + rect.height / 2,
+                left: rect.left + rect.width / 2,
+                opacity: 1
+            });
+        } else {
+            setPointerPos(prev => ({ ...prev, opacity: 0 }));
+        }
+    };
+
+    // Initial position
+    updatePosition();
+
+    // Re-check after a small delay to account for page navigation/rendering
+    const timer = setTimeout(updatePosition, 100);
+    const timer2 = setTimeout(updatePosition, 500);
+
+    window.addEventListener('resize', updatePosition);
+    return () => {
+        window.removeEventListener('resize', updatePosition);
+        clearTimeout(timer);
+        clearTimeout(timer2);
+    };
+  }, [currentStep, isOpen]);
+
   const handleClose = () => {
     setIsOpen(false);
-    localStorage.setItem('pm_ai_onboarding_v1', 'true');
+    localStorage.setItem('pm_ai_onboarding_v6', 'true');
   };
 
   const handleNext = () => {
@@ -93,11 +136,25 @@ export const OnboardingTour: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 sm:p-8 pointer-events-none">
-      {/* Dark overlay with hole punch effect would require heavy lifting. 
-          Instead, we use a semi-transparent backdrop that lets you see the page context. */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-all duration-500" />
+      {/* Reduced darkness and removed blur to keep the background sharp */}
+      <div className="absolute inset-0 bg-black/20 transition-all duration-500" />
 
-      <div className="w-full max-w-lg bg-[#0F111A]/95 border border-white/10 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col relative animate-in slide-in-from-bottom-10 fade-in duration-500 pointer-events-auto">
+      {/* Dynamic Spotlight Pointer (Pulsing Dot with Smooth Transition) */}
+      <div 
+        className="fixed transition-all duration-700 ease-in-out pointer-events-none z-[110]"
+        style={{ 
+            top: pointerPos.top, 
+            left: pointerPos.left, 
+            opacity: pointerPos.opacity,
+            transform: 'translate(-50%, -50%)' 
+        }}
+      >
+        {/* Pulsing Ring */}
+        <div className="absolute -top-4 -left-4 w-8 h-8 rounded-full border-2 border-primary animate-ping opacity-75" />
+        <div className="w-4 h-4 rounded-full bg-primary shadow-[0_0_25px_rgba(168,85,247,1)] border-2 border-white/20" />
+      </div>
+
+      <div className="w-full max-w-lg bg-[#0F111A]/80 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col relative animate-in slide-in-from-bottom-10 fade-in duration-500 pointer-events-auto">
         
         {/* Progress Bar */}
         <div className="absolute top-0 left-0 w-full h-1.5 flex gap-1 px-6 pt-6">

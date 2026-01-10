@@ -366,6 +366,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       )}
 
       <button
+        id="tour-chat"
         onClick={() => setIsOpen((v) => !v)}
         className="w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-primary/50 hover:scale-105 transition-all duration-200 flex items-center justify-center text-white text-2xl"
       >

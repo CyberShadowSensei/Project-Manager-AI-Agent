@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { useProject } from '../context/ProjectContext'
+import { OnboardingTour } from './ui/OnboardingTour'
 
 export const Layout = () => {
   const location = useLocation()
@@ -44,6 +45,7 @@ export const Layout = () => {
   
   return (
     <div className="flex w-full h-screen">
+      <OnboardingTour />
       <div className="w-[240px] border-r border-white/5">
         <Sidebar activeView={activeView} onTeamChange={setActiveView} profilePicture={profilePicture} />
       </div>

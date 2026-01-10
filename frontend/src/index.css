@@ -37,3 +37,21 @@
 .animate-pulse-red {
   animation: pulse-red 2s infinite;
 }
+
+@keyframes bounce-x {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-10px); }
+}
+
+@keyframes bounce-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-bounce-x {
+  animation: bounce-x 1s infinite;
+}
+
+.animate-bounce-y {
+  animation: bounce-y 1s infinite;
+}

@@ -97,9 +97,10 @@ export const Sidebar = ({ activeView, onTeamChange, profilePicture }: SidebarPro
             isActive={activeView === 'dashboard' && location.pathname === '/dashboard'}
             onClick={() => onTeamChange('dashboard')}
           />
-          <SidebarItem icon={<CheckSquare className="w-3.5 h-3.5" />} label="Tasks" to="/tasks" pathname={location.pathname} />
+          <SidebarItem id="tour-tasks" icon={<CheckSquare className="w-3.5 h-3.5" />} label="Tasks" to="/tasks" pathname={location.pathname} />
           <SidebarItem icon={<Mail className="w-3.5 h-3.5" />} label="Inbox" to="/inbox" pathname={location.pathname} />
           <SidebarItem 
+            id="tour-reports"
             icon={
               <div className="relative">
                 <BarChart3 className="w-3.5 h-3.5" />
@@ -133,6 +134,7 @@ export const Sidebar = ({ activeView, onTeamChange, profilePicture }: SidebarPro
       <div className="mt-5 pt-4 border-t border-gray-200 dark:border-white/5">
         <div className="bg-primary/5 rounded-xl shadow-glow"> {/* The contrast island */}
           <SidebarItem
+            id="tour-ai-hub"
             icon={
               <div className="relative w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden">
                 <Sparkles className="w-3.5 h-3.5 text-primary relative z-10" />
@@ -180,6 +182,7 @@ const DashboardItem = ({ icon, label, to, isActive, onClick }: DashboardItemProp
 
   return (
     <button
+      id="tour-dashboard"
       onClick={handleClick}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 ease-out text-left relative group ${
         isActive ? 'bg-black/10 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:translate-x-1'
@@ -200,13 +203,15 @@ type SidebarItemProps = {
   to: string
   pathname: string
   className?: string // Added className prop to allow custom styling
+  id?: string // Added id prop
 }
 
-const SidebarItem = ({ icon, label, to, pathname, className = '' }: SidebarItemProps) => {
+const SidebarItem = ({ icon, label, to, pathname, className = '', id }: SidebarItemProps) => {
   const navigate = useNavigate()
   const isActive = pathname === to
   return (
     <button
+      id={id}
       onClick={() => navigate(to)}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 ease-out text-left relative group ${
         isActive ? 'bg-black/10 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:translate-x-1'

@@ -193,6 +193,11 @@ export const SettingsPage = () => {
             <button
               onClick={() => {
                 localStorage.removeItem('pm_ai_onboarding_v1');
+                localStorage.removeItem('pm_ai_onboarding_v2');
+                localStorage.removeItem('pm_ai_onboarding_v3');
+                localStorage.removeItem('pm_ai_onboarding_v4');
+                localStorage.removeItem('pm_ai_onboarding_v5');
+                localStorage.removeItem('pm_ai_onboarding_v6');
                 alert('Onboarding tour reset! Refresh the page to see it again.');
               }}
               className="w-full px-4 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-xs font-bold uppercase tracking-widest hover:bg-primary/10 transition-all"

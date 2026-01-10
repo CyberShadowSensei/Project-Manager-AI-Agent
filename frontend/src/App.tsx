@@ -11,14 +11,12 @@ import { SettingsPage } from './pages/SettingsPage'
 import { ProjectProvider } from './context/ProjectContext'
 import GlassmorphismCard from './components/ui/GlassmorphismCard'
 import LandingPage from './pages/LandingPage' // Import LandingPage
-import { OnboardingTour } from './components/ui/OnboardingTour'
 
 function App() {
   return (
     <ProjectProvider> {/* Wrap the entire app with ProjectProvider */}
       <BrowserRouter>
         <div className="min-h-screen w-full bg-[#050017] text-white">
-          <OnboardingTour />
           <Routes>
             <Route path="/" element={<Navigate to="/welcome" replace />} />
             <Route path="/welcome" element={<WelcomePage />} />
