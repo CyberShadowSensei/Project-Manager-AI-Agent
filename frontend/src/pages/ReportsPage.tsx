@@ -9,14 +9,14 @@ export const ReportsPage = () => {
   const [loading, setLoading] = useState(false)
   const [sendingSlack, setSendingSlack] = useState(false)
 
-  const fetchInsights = useCallback(async () => {
+  const fetchInsights = useCallback(async (force = false) => {
     if (!currentProject) {
       setInsights(null);
       return;
     }
     setLoading(true)
     try {
-      const response = await aiService.getInsights(currentProject._id)
+      const response = await aiService.getInsights(currentProject._id, force)
       setInsights(response.data)
       await refreshRisk() // Sync global risk level
     } catch (error) {
@@ -127,7 +127,7 @@ export const ReportsPage = () => {
                     Blast Alert to Slack
                 </button>
                 <button 
-                    onClick={fetchInsights}
+                    onClick={() => fetchInsights(true)}
                     disabled={loading}
                     className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                 >

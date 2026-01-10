@@ -37,20 +37,44 @@ export const PRDParserModal = ({ isOpen, onClose, onSuccess }: PRDParserModalPro
     }
   };
 
+  const pollForResults = async (jobId: string) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await aiService.getJobStatus(jobId);
+        const { status, result, error } = res.data;
+
+        if (status === 'completed') {
+          clearInterval(pollInterval);
+          const tasks = result.tasks || [];
+          setExtractedTasks(tasks);
+          setSelectedIds(new Set(tasks.map((t: any) => t.id)));
+          setStep('review');
+          setLoading(false);
+        } else if (status === 'failed') {
+          clearInterval(pollInterval);
+          setLoading(false);
+          console.error("Job failed:", error);
+          alert(`Analysis failed: ${error}`);
+        }
+        // If pending/processing, do nothing and wait for next poll
+      } catch (err) {
+        console.error("Polling error", err);
+        clearInterval(pollInterval);
+        setLoading(false);
+        alert("Network error while checking status.");
+      }
+    }, 2000);
+  };
+
   const handleAnalyze = async () => {
     if (!file) return;
     setLoading(true);
     try {
       const response = await aiService.extractTasksFromFile(file);
-      const tasks = response.data.tasks || [];
-      setExtractedTasks(tasks);
-      // Select all by default
-      setSelectedIds(new Set(tasks.map(t => t.id)));
-      setStep('review');
+      await pollForResults(response.data.jobId);
     } catch (error) {
-      console.error("Failed to analyze PRD:", error);
-      alert("Failed to analyze document. Please try again.");
-    } finally {
+      console.error("Failed to start analysis:", error);
+      alert("Failed to upload document.");
       setLoading(false);
     }
   };
@@ -63,14 +87,10 @@ export const PRDParserModal = ({ isOpen, onClose, onSuccess }: PRDParserModalPro
     setLoading(true);
     try {
       const response = await aiService.extractTasks(currentProject.context);
-      const tasks = response.data.tasks || [];
-      setExtractedTasks(tasks);
-      setSelectedIds(new Set(tasks.map(t => t.id)));
-      setStep('review');
+      await pollForResults(response.data.jobId);
     } catch (error) {
-      console.error("Failed to analyze context:", error);
-      alert("Failed to extract tasks from project documents.");
-    } finally {
+      console.error("Failed to start context analysis:", error);
+      alert("Failed to start analysis.");
       setLoading(false);
     }
   };

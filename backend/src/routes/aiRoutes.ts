@@ -1,26 +1,39 @@
-import express from 'express';
-import multer from 'multer';
-import fs from 'fs';
-import { createRequire } from 'module';
-import { type IProject } from '../models/Project.js';
-import { type ITask } from '../models/Task.js';
 import { analyzeProject, chatOverProject, extractTasksFromText, type AnalyzeInput } from '../services/ai/analyzeProject.js'; // Person C's logic
 import Project from '../models/Project.js'; // Mongoose model for fetching
 import Task from '../models/Task.js'; // Mongoose model for fetching
 import ChatMessage from '../models/ChatMessage.js'; // Chat History Model
-
-const require = createRequire(import.meta.url);
-const pdf = require('pdf-parse');
+import { aiCache } from '../services/cache.js';
+import { jobQueue } from '../services/jobQueue.js';
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
+// GET Job Status
+router.get('/jobs/:id', (req, res) => {
+    const job = jobQueue.getJob(req.params.id);
+    if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+    }
+    res.json(job);
+});
+
 // POST AI Analysis for a project
 router.post('/analyze/:projectId', async (req, res) => {
     const { projectId } = req.params;
+    const forceRefresh = req.query.force === 'true';
+    const cacheKey = `analysis:${projectId}`;
 
     try {
-        // Fetch project and tasks from our main database
+        // 1. Check Cache
+        if (!forceRefresh) {
+            const cachedAnalysis = aiCache.get(cacheKey);
+            if (cachedAnalysis) {
+                console.log(`[Cache] Serving analysis for ${projectId}`);
+                return res.json(cachedAnalysis);
+            }
+        }
+
+        // 2. Fetch Data
         const projectData: IProject | null = await Project.findById(projectId);
         if (!projectData) {
             return res.status(404).json({ message: 'Project not found' });
@@ -45,8 +58,14 @@ router.post('/analyze/:projectId', async (req, res) => {
             })),
         };
 
-        // Call Person C's AI logic
+        // 3. Perform Analysis
         const analysis = await analyzeProject(aiInput);
+
+        // 4. Cache Result (only if successful)
+        if (!('error' in analysis)) {
+            aiCache.set(cacheKey, analysis);
+        }
+        
         res.json(analysis);
 
     } catch (error: any) {
@@ -122,7 +141,7 @@ router.post('/chat/:projectId', async (req, res) => {
     }
 });
 
-// POST God Mode: Doc-to-Tasks (Raw Text)
+// POST God Mode: Doc-to-Tasks (Raw Text) - ASYNC
 router.post('/doc-to-tasks', async (req, res) => {
     const { document } = req.body;
 
@@ -131,15 +150,17 @@ router.post('/doc-to-tasks', async (req, res) => {
     }
 
     try {
-        const result = await extractTasksFromText(document);
-        res.json(result);
+        const jobId = jobQueue.addJob('doc-to-tasks', document, async (doc) => {
+            return await extractTasksFromText(doc);
+        });
+        res.status(202).json({ message: 'Job accepted', jobId });
     } catch (error: any) {
         console.error("Doc-to-Tasks Route Error:", error);
-        res.status(500).json({ message: "Failed to extract tasks from document", error: error.message });
+        res.status(500).json({ message: "Failed to queue task extraction", error: error.message });
     }
 });
 
-// POST God Mode: Doc-to-Tasks (File Upload)
+// POST God Mode: Doc-to-Tasks (File Upload) - ASYNC
 router.post('/extract-from-file', upload.single('file'), async (req, res) => {
     const file = req.file;
 
@@ -159,11 +180,14 @@ router.post('/extract-from-file', upload.single('file'), async (req, res) => {
             extractedText = fs.readFileSync(file.path, 'utf8');
         }
 
-        // Clean up temp file
+        // Clean up temp file immediately
         fs.unlinkSync(file.path);
 
-        const result = await extractTasksFromText(extractedText);
-        res.json(result);
+        const jobId = jobQueue.addJob('extract-from-file', extractedText, async (text) => {
+            return await extractTasksFromText(text);
+        });
+
+        res.status(202).json({ message: 'File processing started', jobId });
 
     } catch (error: any) {
         // Try to clean up file if it exists
@@ -171,7 +195,7 @@ router.post('/extract-from-file', upload.single('file'), async (req, res) => {
             fs.unlinkSync(file.path);
         }
         console.error("Extract-from-file Route Error:", error);
-        res.status(500).json({ message: "Failed to process file and extract tasks", error: error.message });
+        res.status(500).json({ message: "Failed to process file", error: error.message });
     }
 });
 

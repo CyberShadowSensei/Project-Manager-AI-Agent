@@ -156,18 +156,22 @@ export const analyticsService = {
 };
 
 export const aiService = {
-  getInsights: (projectId: string) => api.post<AIInsights>(`/api/ai/analyze/${projectId}`),
+  getInsights: (projectId: string, forceRefresh = false) => 
+    api.post<AIInsights>(`/api/ai/analyze/${projectId}${forceRefresh ? '?force=true' : ''}`),
   chatWithAI: (projectId: string, question: string) => api.post<{ answer: string }>(`/api/ai/chat/${projectId}`, { question }),
-  extractTasks: (document: string) => api.post<{ tasks: any[] }>('/api/ai/doc-to-tasks', { document }),
+  
+  // Async Job Endpoints
+  extractTasks: (document: string) => api.post<{ message: string; jobId: string }>('/api/ai/doc-to-tasks', { document }),
   extractTasksFromFile: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post<{ summary: string; tasks: any[] }>('/api/ai/extract-from-file', formData, {
+    return api.post<{ message: string; jobId: string }>('/api/ai/extract-from-file', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
   },
+  getJobStatus: (jobId: string) => api.get<{ status: 'pending' | 'processing' | 'completed' | 'failed'; result?: any; error?: string }>(`/api/ai/jobs/${jobId}`),
 };
 
 export const inboxService = {
