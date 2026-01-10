@@ -68,6 +68,9 @@ router.post('/slack/alert', async (req, res) => {
         if (error.message?.includes('missing_scope')) {
             userMessage = 'PERMISSION ERROR: The Slack Bot Token is missing the "chat:write" scope.';
             technicalError = 'Please go to api.slack.com, add "chat:write" to Bot Token Scopes, and REINSTALL the app to your workspace.';
+        } else if (error.message?.includes('channel_not_found')) {
+            userMessage = 'CHANNEL NOT FOUND: The bot cannot find the specified channel.';
+            technicalError = `Please ensure the bot is a member of the channel. Type "/invite @your_bot_name" in the Slack channel [ID: ${channel}] to fix this.`;
         }
 
         res.status(500).json({ 
