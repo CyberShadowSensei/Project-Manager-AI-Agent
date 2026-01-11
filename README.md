@@ -4,6 +4,7 @@ The PM AI Agent is a professional project management assistant designed to autom
 
 ## Project Links
 *   Deployment URL: https://project-manager-ai-agent-xi.vercel.app/
+*   Demo Video Finale InnVoex: https://drive.google.com/file/d/1aJarrFI2UR-hgGcM6Th2M1EHRhq7eIBf/view?usp=sharing
 *   Demo Video: https://drive.google.com/file/d/1nsPLL1ZEoowwnFAY_cf-_Gup_zPI39Y7/view?usp=drivesdk
 
 ## Status and Stack
